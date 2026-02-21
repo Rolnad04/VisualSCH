@@ -1,0 +1,19 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#1A237E">
+  <defs>
+    <clipPath id="circleClip">
+      <circle cx="50" cy="50" r="48"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#circleClip)">
+    <rect width="100" height="100" fill="white"/>
+    <path d="M50 2 a 48 48 0 0 1 0 96 a 48 48 0 0 1 0 -96" stroke="#1A237E" stroke-width="4" fill="none"/>
+    
+    <text x="50" y="40" font-family="PT Sans, sans-serif" font-size="20" font-weight="bold" fill="#1A237E" text-anchor="middle">SPORTING</text>
+    <text x="50" y="60" font-family="PT Sans, sans-serif" font-size="20" font-weight="bold" fill="#1A237E" text-anchor="middle">CLUB</text>
+    <text x="50" y="80" font-family="PT Sans, sans-serif" font-size="14" fill="#FF5722" text-anchor="middle" font-weight="bold">HUARAZ</text>
+
+    <g transform="translate(50, 50) scale(0.4)">
+      <path d="M 0 -40 L 11.76 -12.36 H 38.04 L 18.09 6.18 L 23.51 38.04 L 0 20 L -23.51 38.04 L -18.09 6.18 L -38.04 -12.36 H -11.76 Z" fill="#1A237E" opacity="0.1"/>
+    </g>
+  </g>
+</svg>

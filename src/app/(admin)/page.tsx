@@ -3,12 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-export default function Home() {
+export default function AdminRootPage() {
   const router = useRouter();
-
   useEffect(() => {
-    router.replace('/login');
+    router.replace('/inicio');
   }, [router]);
-
   return null;
 }

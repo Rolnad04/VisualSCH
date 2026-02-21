@@ -1,3 +1,76 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "logo",
+      "description": "Sporting Club Huaraz logo",
+      "imageUrl": "https://images.unsplash.com/photo-1761764445670-aec1dcc35753?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxsb2dvJTIwc29jY2VyfGVufDB8fHx8MTc3MTY0ODI0Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "logo soccer"
+    },
+    {
+      "id": "avatar1",
+      "description": "Avatar of a student",
+      "imageUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwZXJzb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzE1OTUwNDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "avatar2",
+      "description": "Avatar of a student",
+      "imageUrl": "https://images.unsplash.com/photo-1525186402429-b4ff38bedec6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwZXJzb24lMjBoYXBweXxlbnwwfHx8fDE3NzE2MzgyMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person happy"
+    },
+    {
+      "id": "avatar3",
+      "description": "Avatar of a student",
+      "imageUrl": "https://images.unsplash.com/photo-1597113117918-eb40fe0b84e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjaGlsZCUyMHNtaWxpbmd8ZW58MHx8fHwxNzcxNTU2MTgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "child smiling"
+    },
+    {
+      "id": "avatar4",
+      "description": "Avatar of a student",
+      "imageUrl": "https://images.unsplash.com/photo-1635899077478-d2fed4f2fbc6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0ZWVuYWdlciUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTY0ODI0Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "teenager portrait"
+    },
+    {
+      "id": "avatar5",
+      "description": "Avatar of a student",
+      "imageUrl": "https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTYzMTE4N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "avatar6",
+      "description": "Avatar of a student",
+      "imageUrl": "https://images.unsplash.com/photo-1639747280804-dd2d6b3d88ac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxtYW4lMjBzbWlsaW5nfGVufDB8fHx8MTc3MTU2MTI4MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man smiling"
+    },
+    {
+      "id": "payment_yape",
+      "description": "Yape payment receipt",
+      "imageUrl": "https://images.unsplash.com/photo-1706972612595-aa53b400ee80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwaG9uZSUyMHNjcmVlbnxlbnwwfHx8fDE3NzE1OTM3MjN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "phone screen"
+    },
+    {
+      "id": "payment_transfer",
+      "description": "Bank transfer receipt",
+      "imageUrl": "https://images.unsplash.com/photo-1697384834684-d1ef30023607?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxyZWNlaXB0JTIwZG9jdW1lbnR8ZW58MHx8fHwxNzcxNTc3NzY0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "receipt document"
+    },
+    {
+      "id": "boleta",
+      "description": "Electronic receipt",
+      "imageUrl": "https://images.unsplash.com/photo-1554224155-cfa08c2a758f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxpbnZvaWNlJTIwZG9jdW1lbnR8ZW58MHx8fHwxNzcxNTQ5MjE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "invoice document"
+    },
+    {
+      "id": "uniform",
+      "description": "Jersey and shorts uniform",
+      "imageUrl": "https://images.unsplash.com/photo-1551854386-b42759a60dd0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzb2NjZXIlMjBqZXJzZXl8ZW58MHx8fHwxNzcxNTU0OTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "soccer jersey"
+    },
+    {
+      "id": "vest",
+      "description": "Blue training vest",
+      "imageUrl": "https://images.unsplash.com/photo-1770215252183-da5f44f2851c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx0cmFpbmluZyUyMHZlc3R8ZW58MHx8fHwxNzcxNjQ4MjQ2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "training vest"
+    }
+  ]
 }

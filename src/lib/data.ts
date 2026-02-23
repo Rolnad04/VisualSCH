@@ -281,7 +281,7 @@ export const requests: ConfirmationRequest[] = [
       amount: 25.00,
     },
     observation: {
-      notes: 'El monto de la deuda es de S/ 30.00, el pago de S/ 25.00 es incompleto. Favor de regularizar.',
+      notes: 'El número de operación en el comprobante no es legible. Por favor, sube una imagen más clara o re-envía la solicitud con el número correcto en las notas.',
       timestamp: addHours(subDays(now, 2), 5).toISOString(),
     },
   },
@@ -311,7 +311,7 @@ export const requests: ConfirmationRequest[] = [
     },
     rejectionTimestamp: addHours(subDays(now, 3), 8).toISOString(),
     observation: {
-        notes: 'La imagen de la transferencia no es legible. Por favor, enviar una captura de pantalla más clara.',
+        notes: 'La transferencia fue realizada a una cuenta incorrecta y el plazo para la corrección ha expirado. La solicitud ha sido rechazada.',
         timestamp: addHours(subDays(now, 3), 8).toISOString(),
     }
   },

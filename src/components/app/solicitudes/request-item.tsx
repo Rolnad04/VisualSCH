@@ -54,13 +54,14 @@ export default function RequestItem({ request, isLast }: RequestItemProps) {
       <div className={cn('flex items-center px-4 py-3', !isLast && 'border-b')}>
         <div className="grid grid-cols-12 gap-4 flex-1 items-center">
             <div className="col-span-3 lg:col-span-2 flex items-center gap-2">
+                <div className={cn("h-3 w-3 rounded-full", color)} />
                 <span className="font-medium">{format(new Date(request.timestamp), 'HH:mm')}</span>
             </div>
             <div className="col-span-5 lg:col-span-4 font-medium truncate">{request.motive}</div>
             <div className="col-span-4 lg:col-span-3 text-muted-foreground truncate">{request.promoterName}</div>
             <div className="hidden lg:flex col-span-3 lg:col-span-3 items-center gap-2">
                 <Badge variant={variant} className="flex items-center">
-                    <Icon className={cn("mr-1 h-3 w-3", `text-[${color}]`)} />
+                    <Icon className={cn("mr-1 h-3 w-3")} />
                     {request.status}
                 </Badge>
                 {statusTimestamp && (
@@ -132,8 +133,14 @@ export default function RequestItem({ request, isLast }: RequestItemProps) {
                      <p className="text-xs text-muted-foreground">
                         {format(new Date(request.observation.timestamp), "dd/MM/yyyy HH:mm 'hrs'")}
                     </p>
-                    <Textarea defaultValue={request.observation.notes} placeholder="Escriba aquí el motivo..."/>
-                    {request.status === 'Observado' && <Button variant="outline" size="sm" className="mt-2">Subir nueva evidencia</Button>}
+                    {request.status === 'Observado' ? (
+                        <>
+                            <Textarea defaultValue={request.observation.notes} placeholder="Escriba aquí el motivo..."/>
+                            <Button variant="outline" size="sm" className="mt-2">Subir nueva evidencia</Button>
+                        </>
+                    ) : (
+                        <p className="text-sm text-muted-foreground border-l-2 pl-2 p-2 bg-background rounded-md">{request.observation.notes}</p>
+                    )}
                 </div>
             )}
 

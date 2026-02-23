@@ -51,7 +51,7 @@ export default function ReportesPage() {
                         <p><strong>Pagos del día:</strong> S/ 450.00</p>
                         <p><strong>Pagos del mes:</strong> S/ 8,900.00</p>
                         <p className="text-yellow-600"><strong>Pagos pendientes:</strong> 0</p>
-                        <p className="text-red-600"><strong>Pagos atrasados:</strong> 5</p>
+                        <p className="text-red-600"><strong>Pagos atrasados:</strong> 0</p>
                     </CardContent>
                 </Card>
             </div>

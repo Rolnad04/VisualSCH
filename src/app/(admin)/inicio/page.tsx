@@ -73,7 +73,7 @@ export default function Dashboard() {
             <CardContent>
               <div className="text-2xl font-bold">+{pendingRequests}</div>
               <p className="text-xs text-muted-foreground">
-                <Link href="/solicitudes" className="underline">Ver solicitudes</Link>
+                <Link href="/solicitudes?status=Pendiente" className="underline">Ver solicitudes</Link>
               </p>
             </CardContent>
           </Card>

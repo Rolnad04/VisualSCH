@@ -1,3 +1,5 @@
+'use client';
+import { useSearchParams } from 'next/navigation';
 import { File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +8,12 @@ import SolicitudesClient from '@/components/app/solicitudes/solicitudes-client';
 import { requests } from '@/lib/data';
 
 export default function SolicitudesPage() {
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get('status');
+  const defaultValue = statusParam || 'all';
+
   return (
-    <Tabs defaultValue="all">
+    <Tabs defaultValue={defaultValue}>
       <div className="flex items-center">
         <TabsList>
           <TabsTrigger value="all">Todo</TabsTrigger>
@@ -23,7 +29,7 @@ export default function SolicitudesPage() {
              <div className="h-2 w-2 rounded-full bg-orange-500" />
             Observado
           </TabsTrigger>
-          <TabsTrigger value="Rechazado" className="hidden sm:flex items-center gap-2">
+          <TabsTrigger value="Rechazado" className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-red-500" />
             Rechazado
           </TabsTrigger>

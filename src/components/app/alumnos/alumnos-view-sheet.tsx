@@ -82,13 +82,13 @@ export default function AlumnoViewSheet({ open, onOpenChange, student }: AlumnoV
            </div>
 
         </div>
-        <SheetFooter className="grid grid-cols-2 sm:grid-cols-3 md:flex gap-2 pt-4">
+        <SheetFooter className="flex flex-row flex-wrap justify-start sm:justify-end gap-2 pt-4">
             <Button variant="outline" size="sm" className="h-auto py-2"><CreditCard className="mr-2 h-4 w-4"/> Control de Pagos</Button>
             <Button variant="outline" size="sm" className="h-auto py-2"><History className="mr-2 h-4 w-4"/> Historial</Button>
             <Button variant="outline" size="sm" className="h-auto py-2"><UserCheck className="mr-2 h-4 w-4"/> Asistencia</Button>
             <Button variant="outline" size="sm" className="h-auto py-2"><Eye className="mr-2 h-4 w-4"/> Visualizar Carnet</Button>
             <SheetClose asChild>
-                <Button className="col-span-2 sm:col-span-3 md:w-auto">Cerrar</Button>
+                <Button>Cerrar</Button>
             </SheetClose>
         </SheetFooter>
       </SheetContent>

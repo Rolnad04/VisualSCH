@@ -3,14 +3,11 @@ import Image from 'next/image';
 import {
   ChevronDown,
   Clock,
-  User,
-  CreditCard,
   CheckCircle,
   XCircle,
   AlertTriangle,
   Printer,
   FileText,
-  MessageSquare,
   Paperclip
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ConfirmationRequest } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -28,30 +25,49 @@ type RequestItemProps = {
 };
 
 const statusConfig = {
-  Pendiente: { color: 'bg-yellow-500', icon: Clock },
-  Confirmado: { color: 'bg-green-500', icon: CheckCircle },
-  Rechazado: { color: 'bg-red-500', icon: XCircle },
-  Observado: { color: 'bg-orange-500', icon: AlertTriangle },
+  Pendiente: { color: 'bg-yellow-400', icon: Clock, variant: 'secondary' as const },
+  Confirmado: { color: 'bg-green-500', icon: CheckCircle, variant: 'secondary' as const },
+  Rechazado: { color: 'bg-red-500', icon: XCircle, variant: 'destructive' as const },
+  Observado: { color: 'bg-orange-500', icon: AlertTriangle, variant: 'secondary' as const },
 };
 
 export default function RequestItem({ request, isLast }: RequestItemProps) {
-  const { color, icon: Icon } = statusConfig[request.status];
+  const { color, icon: Icon, variant } = statusConfig[request.status];
+
+  const getStatusTimestamp = () => {
+    switch (request.status) {
+      case 'Confirmado':
+        return request.confirmationTimestamp;
+      case 'Observado':
+        return request.observation?.timestamp;
+      case 'Rechazado':
+        return request.rejectionTimestamp;
+      default:
+        return null;
+    }
+  };
+
+  const statusTimestamp = getStatusTimestamp();
 
   return (
     <Collapsible>
       <div className={cn('flex items-center px-4 py-3', !isLast && 'border-b')}>
         <div className="grid grid-cols-12 gap-4 flex-1 items-center">
             <div className="col-span-3 lg:col-span-2 flex items-center gap-2">
-                <span className={cn('h-2.5 w-2.5 rounded-full', color)} />
                 <span className="font-medium">{format(new Date(request.timestamp), 'HH:mm')}</span>
             </div>
             <div className="col-span-5 lg:col-span-4 font-medium truncate">{request.motive}</div>
             <div className="col-span-4 lg:col-span-3 text-muted-foreground truncate">{request.promoterName}</div>
-            <div className="hidden lg:flex col-span-2 items-center gap-2">
-                <Badge variant={request.status === 'Rechazado' ? 'destructive' : 'secondary'}>
-                    <Icon className="mr-1 h-3 w-3" />
+            <div className="hidden lg:flex col-span-3 lg:col-span-3 items-center gap-2">
+                <Badge variant={variant} className="flex items-center">
+                    <Icon className={cn("mr-1 h-3 w-3", `text-[${color}]`)} />
                     {request.status}
                 </Badge>
+                {statusTimestamp && (
+                    <span className="text-xs text-muted-foreground">
+                        {format(new Date(statusTimestamp), 'dd/MM HH:mm')}
+                    </span>
+                )}
             </div>
         </div>
         <CollapsibleTrigger asChild>
@@ -71,6 +87,7 @@ export default function RequestItem({ request, isLast }: RequestItemProps) {
               {request.student.isMinor ? (
                 <>
                   <p><strong className="font-medium">Responsable:</strong> {request.student.guardianName}</p>
+                  <p><strong className="font-medium">DNI (Resp.):</strong> {request.student.guardianDni}</p>
                   <p><strong className="font-medium">Teléfono (Resp.):</strong> {request.student.guardianPhone}</p>
                 </>
               ) : (
@@ -109,14 +126,14 @@ export default function RequestItem({ request, isLast }: RequestItemProps) {
               </div>
             )}
              
-            {request.status === 'Observado' && request.observation && (
+            {(request.status === 'Observado' || request.status === 'Rechazado') && request.observation && (
                  <div className="space-y-2">
-                    <h4 className="font-semibold text-amber-600 flex items-center gap-2"><AlertTriangle size={16}/> Observación del Admin</h4>
+                    <h4 className={cn("font-semibold flex items-center gap-2", request.status === 'Observado' ? 'text-amber-600' : 'text-red-600')}><AlertTriangle size={16}/> {request.status === 'Observado' ? 'Observación del Admin' : 'Motivo del Rechazo'}</h4>
                      <p className="text-xs text-muted-foreground">
-                        Observado el: {format(new Date(request.observation.timestamp), "dd/MM/yyyy HH:mm 'hrs'")}
+                        {format(new Date(request.observation.timestamp), "dd/MM/yyyy HH:mm 'hrs'")}
                     </p>
-                    <Textarea defaultValue={request.observation.notes} placeholder="Escriba aquí el motivo de la observación..."/>
-                    <Button variant="outline" size="sm" className="mt-2">Subir nueva evidencia</Button>
+                    <Textarea defaultValue={request.observation.notes} placeholder="Escriba aquí el motivo..."/>
+                    {request.status === 'Observado' && <Button variant="outline" size="sm" className="mt-2">Subir nueva evidencia</Button>}
                 </div>
             )}
 

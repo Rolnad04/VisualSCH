@@ -34,6 +34,13 @@ export default function RequestsList({ requests }: RequestsListProps) {
 
   return (
     <div className="space-y-6">
+       <div className="grid grid-cols-12 gap-4 flex-1 items-center px-4 py-2 border-b font-semibold text-sm text-muted-foreground">
+          <div className="col-span-3 lg:col-span-2">Hora</div>
+          <div className="col-span-5 lg:col-span-4">Motivo</div>
+          <div className="col-span-4 lg:col-span-3">Promotora</div>
+          <div className="hidden lg:block col-span-2">Estado</div>
+          <div className="w-9 p-0" />
+      </div>
       {sortedDates.map(date => (
         <div key={date}>
           <h3 className="text-lg font-semibold mb-2 capitalize">

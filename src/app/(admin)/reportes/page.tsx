@@ -2,22 +2,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { users } from '@/lib/data';
-import { DateRange } from 'react-day-picker';
-import { Calendar as CalendarIcon, Download } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { Download } from 'lucide-react';
 
 export default function ReportesPage() {
-    const [promoter, setPromoter] = useState('all');
-    const [dateRange, setDateRange] = useState<DateRange | undefined>();
-    const [preset, setPreset] = useState('month');
-
-    const promoterOptions = users.filter(u => u.role === 'Promotora');
 
     return (
         <div className="space-y-6">
@@ -28,42 +15,6 @@ export default function ReportesPage() {
                 </div>
                 <Button><Download className="mr-2 h-4 w-4" /> Exportar Reporte General</Button>
             </div>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Filtros de Reporte</CardTitle>
-                    <div className="flex flex-wrap items-center gap-2 pt-2">
-                        <Button variant={preset === 'today' ? 'default' : 'outline'} onClick={() => setPreset('today')}>Hoy</Button>
-                        <Button variant={preset === 'month' ? 'default' : 'outline'} onClick={() => setPreset('month')}>Este Mes</Button>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <Button
-                                id="date"
-                                variant={'outline'}
-                                className={cn('w-[260px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (
-                                dateRange.to ? (<>{format(dateRange.from, 'LLL dd, y', {locale: es})} - {format(dateRange.to, 'LLL dd, y', {locale: es})}</>) 
-                                : (format(dateRange.from, 'LLL dd, y', {locale: es}))) 
-                                : (<span>Rango personalizado</span>)
-                                }
-                            </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2}/>
-                            </PopoverContent>
-                        </Popover>
-                        <Select value={promoter} onValueChange={setPromoter}>
-                            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Promotora" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todas las promotoras</SelectItem>
-                                {promoterOptions.map(p => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardHeader>
-            </Card>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                  <Card>

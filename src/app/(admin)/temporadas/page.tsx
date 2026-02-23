@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { seasons } from '@/lib/data';
 import type { Season } from '@/lib/types';
-import { Calendar, MoreHorizontal, PlusCircle, Users } from 'lucide-react';
+import { Calendar, MoreHorizontal, PlusCircle, Users, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function TemporadasPage() {
   const [open, setOpen] = useState(false);
+  const [isViewOpen, setViewOpen] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
 
   const handleEdit = (season: Season) => {
@@ -25,6 +26,11 @@ export default function TemporadasPage() {
     setSelectedSeason(null);
     setOpen(true);
   };
+
+  const handleView = (season: Season) => {
+    setSelectedSeason(season);
+    setViewOpen(true);
+  }
 
   return (
     <div className="space-y-6">
@@ -39,9 +45,9 @@ export default function TemporadasPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>{selectedSeason ? 'Editar' : 'Crear'} Temporada</DialogTitle>
+              <DialogTitle>{selectedSeason && !isViewOpen ? 'Editar' : 'Crear'} Temporada</DialogTitle>
               <DialogDescription>
-                {selectedSeason ? 'Modifica los detalles de la temporada.' : 'Completa los detalles para una nueva temporada.'}
+                {selectedSeason && !isViewOpen ? 'Modifica los detalles de la temporada.' : 'Completa los detalles para una nueva temporada.'}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -79,6 +85,51 @@ export default function TemporadasPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* View Dialog */}
+        <Dialog open={isViewOpen} onOpenChange={setViewOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                <DialogTitle>Detalles de Temporada</DialogTitle>
+                <DialogDescription>{selectedSeason?.name}</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 text-sm">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <p className="text-right font-semibold">Nombre</p>
+                        <p className="col-span-3">{selectedSeason?.name}</p>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <p className="text-right font-semibold">Duración</p>
+                        <p className="col-span-3">{selectedSeason?.duration} días</p>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <p className="text-right font-semibold">Precio</p>
+                        <p className="col-span-3">S/ {selectedSeason?.price.toFixed(2)}</p>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <p className="text-right font-semibold">Fecha Inicio</p>
+                        <p className="col-span-3">{selectedSeason?.startDate}</p>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <p className="text-right font-semibold">Fecha Fin</p>
+                        <p className="col-span-3">{selectedSeason?.endDate}</p>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <p className="text-right font-semibold">Fecha de Pago</p>
+                        <p className="col-span-3">{selectedSeason?.paymentDate}</p>
+                    </div>
+                    <div className="grid grid-cols-4 items-start gap-4">
+                        <p className="text-right font-semibold pt-1">Beneficios</p>
+                        <p className="col-span-3">{selectedSeason?.benefits}</p>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setViewOpen(false)}>Cerrar</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -96,7 +147,7 @@ export default function TemporadasPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Ver</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleView(season)}>Ver</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleEdit(season)}>Editar</DropdownMenuItem>
                   <DropdownMenuItem className="text-red-500">Deshabilitar</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -121,7 +172,7 @@ export default function TemporadasPage() {
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
                  <Button variant="outline" onClick={() => handleEdit(season)}>Editar</Button>
-                 <Button>Ver Detalles</Button>
+                 <Button onClick={() => handleView(season)}>Ver Detalles</Button>
             </CardFooter>
           </Card>
         ))}

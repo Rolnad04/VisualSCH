@@ -9,7 +9,7 @@ import {
   Attendance,
   User,
 } from './types';
-import { subDays, format } from 'date-fns';
+import { subDays, subHours, addHours, format } from 'date-fns';
 import { getImage } from './placeholder-images';
 
 export const users: User[] = [
@@ -199,10 +199,12 @@ export const students: Student[] = [
   },
 ];
 
+const now = new Date();
+
 export const requests: ConfirmationRequest[] = [
   {
     id: 'req-1',
-    timestamp: new Date().toISOString(),
+    timestamp: subHours(now, 2).toISOString(),
     motive: 'Inscripción/Mensualidad',
     promoterName: 'Sofia Rodriguez',
     status: 'Pendiente',
@@ -210,6 +212,7 @@ export const requests: ConfirmationRequest[] = [
       name: 'Nuevo Alumno Jr.',
       isMinor: true,
       guardianName: 'Padre Ejemplo',
+      guardianDni: '78945612',
       guardianPhone: '987654321',
       sport: 'Fútbol',
       category: 'Categoría 10',
@@ -218,7 +221,7 @@ export const requests: ConfirmationRequest[] = [
     },
     payment: {
       evidencePhotoUrl: 'https://picsum.photos/seed/yape/300/500',
-      evidenceTimestamp: new Date().toISOString(),
+      evidenceTimestamp: subHours(now, 3).toISOString(),
       method: 'Yape',
       payerName: 'Padre Ejemplo',
       amount: 85.00,
@@ -227,7 +230,7 @@ export const requests: ConfirmationRequest[] = [
   },
   {
     id: 'req-2',
-    timestamp: subDays(new Date(), 1).toISOString(),
+    timestamp: subDays(now, 1).toISOString(),
     motive: 'Mensualidad',
     promoterName: 'Luisa Martinez',
     status: 'Confirmado',
@@ -235,6 +238,7 @@ export const requests: ConfirmationRequest[] = [
       name: 'Maria Lopez Torres',
       isMinor: true,
       guardianName: 'Ana Torres',
+      guardianDni: '12345678',
       guardianPhone: '912345678',
       sport: 'Fútbol',
       category: 'Categoría 13',
@@ -246,17 +250,17 @@ export const requests: ConfirmationRequest[] = [
       payerName: 'Ana Torres',
       amount: 30.00,
     },
-    confirmationTimestamp: subDays(new Date(), 1).toISOString(),
+    confirmationTimestamp: addHours(subDays(now, 1), 4).toISOString(),
     observation: {
-      notes: 'El pago inicial fue de 20 soles, se solicitó completar.',
-      timestamp: subDays(new Date(), 2).toISOString(),
+      notes: 'El pago inicial fue de 20 soles, se solicitó completar y la promotora confirmó la recepción del restante.',
+      timestamp: addHours(subDays(now, 1), 2).toISOString(),
       adminEvidencePhotoUrl: 'https://picsum.photos/seed/transfer/300/500',
-      adminEvidenceTimestamp: subDays(new Date(), 2).toISOString(),
+      adminEvidenceTimestamp: addHours(subDays(now, 1), 1).toISOString(),
     }
   },
   {
     id: 'req-3',
-    timestamp: subDays(new Date(), 2).toISOString(),
+    timestamp: subDays(now, 2).toISOString(),
     motive: 'Deuda',
     promoterName: 'Sofia Rodriguez',
     status: 'Observado',
@@ -271,19 +275,19 @@ export const requests: ConfirmationRequest[] = [
     },
     payment: {
       evidencePhotoUrl: 'https://picsum.photos/seed/yape2/300/500',
-      evidenceTimestamp: subDays(new Date(), 2).toISOString(),
+      evidenceTimestamp: subHours(subDays(now, 2), 1).toISOString(),
       method: 'Yape',
       payerName: 'Carlos Sanchez Ruiz',
       amount: 25.00,
     },
     observation: {
-      notes: 'El monto de la deuda es de S/ 30.00, el pago es incompleto. Favor de regularizar.',
-      timestamp: subDays(new Date(), 1).toISOString(),
+      notes: 'El monto de la deuda es de S/ 30.00, el pago de S/ 25.00 es incompleto. Favor de regularizar.',
+      timestamp: addHours(subDays(now, 2), 5).toISOString(),
     },
   },
   {
     id: 'req-4',
-    timestamp: subDays(new Date(), 3).toISOString(),
+    timestamp: subDays(now, 3).toISOString(),
     motive: 'Uniforme',
     promoterName: 'Luisa Martinez',
     status: 'Rechazado',
@@ -291,6 +295,7 @@ export const requests: ConfirmationRequest[] = [
       name: 'Ana Gomez Flores',
       isMinor: true,
       guardianName: 'Luis Gomez',
+      guardianDni: '23456789',
       guardianPhone: '987123456',
       sport: 'Fútbol',
       category: 'Categoría 10',
@@ -299,16 +304,20 @@ export const requests: ConfirmationRequest[] = [
     },
     payment: {
       evidencePhotoUrl: 'https://picsum.photos/seed/transfer2/300/500',
-      evidenceTimestamp: subDays(new Date(), 3).toISOString(),
+      evidenceTimestamp: subHours(subDays(now, 3), 1).toISOString(),
       method: 'Transferencia',
       payerName: 'Luis Gomez',
       amount: 55.00,
     },
-    rejectionTimestamp: subDays(new Date(), 2).toISOString(),
+    rejectionTimestamp: addHours(subDays(now, 3), 8).toISOString(),
+    observation: {
+        notes: 'La imagen de la transferencia no es legible. Por favor, enviar una captura de pantalla más clara.',
+        timestamp: addHours(subDays(now, 3), 8).toISOString(),
+    }
   },
    {
     id: 'req-5',
-    timestamp: new Date().toISOString(),
+    timestamp: subHours(now, 1).toISOString(),
     motive: 'Pack 1',
     promoterName: 'Sofia Rodriguez',
     status: 'Pendiente',
@@ -375,7 +384,7 @@ export const packages: Package[] = [
 export const products: Product[] = [
   {
     id: 'prod-1',
-    imageUrl: getImage('uniform')?.imageUrl || 'https://picsum.photos/seed/uniform/200/200',
+    imageUrl: getImage('uniform')?.imageUrl ?? 'https://picsum.photos/seed/uniform/200/200',
     imageHint: getImage('uniform')?.imageHint,
     name: 'Camiseta y short',
     category: 'Uniforme',
@@ -384,7 +393,7 @@ export const products: Product[] = [
   },
   {
     id: 'prod-2',
-    imageUrl: getImage('vest')?.imageUrl || 'https://picsum.photos/seed/vest/200/200',
+    imageUrl: getImage('vest')?.imageUrl ?? 'https://picsum.photos/seed/vest/200/200',
     imageHint: getImage('vest')?.imageHint,
     name: 'Chaleco entrenamiento azul',
     category: 'Uniforme',

@@ -73,6 +73,7 @@ export type ConfirmationRequest = {
     name: string;
     isMinor: boolean;
     guardianName?: string;
+    guardianDni?: string;
     guardianPhone?: string;
     studentPhone?: string;
     sport: string;

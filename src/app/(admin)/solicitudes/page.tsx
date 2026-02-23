@@ -1,4 +1,4 @@
-import { File, ListFilter, PlusCircle } from 'lucide-react';
+import { File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,10 +11,20 @@ export default function SolicitudesPage() {
       <div className="flex items-center">
         <TabsList>
           <TabsTrigger value="all">Todo</TabsTrigger>
-          <TabsTrigger value="Pendiente">Pendiente</TabsTrigger>
-          <TabsTrigger value="Confirmado">Confirmado</TabsTrigger>
-          <TabsTrigger value="Observado">Observado</TabsTrigger>
-          <TabsTrigger value="Rechazado" className="hidden sm:flex">
+          <TabsTrigger value="Pendiente" className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-yellow-400" />
+            Pendiente
+          </TabsTrigger>
+          <TabsTrigger value="Confirmado" className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-green-500" />
+            Confirmado
+          </TabsTrigger>
+          <TabsTrigger value="Observado" className="flex items-center gap-2">
+             <div className="h-2 w-2 rounded-full bg-orange-500" />
+            Observado
+          </TabsTrigger>
+          <TabsTrigger value="Rechazado" className="hidden sm:flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-red-500" />
             Rechazado
           </TabsTrigger>
         </TabsList>

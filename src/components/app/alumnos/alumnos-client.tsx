@@ -4,6 +4,9 @@ import type { Student } from '@/lib/types';
 import AlumnosFilterBar from './alumnos-filter-bar';
 import AlumnosTable from './alumnos-table';
 import AlumnoViewSheet from './alumnos-view-sheet';
+import { Button } from '@/components/ui/button';
+import AnunciosDialog from './anuncios-dialog';
+import NotificacionesDeudaDialog from './notificaciones-deuda-dialog';
 
 type AlumnosClientProps = {
   initialStudents: Student[];
@@ -22,6 +25,8 @@ export default function AlumnosClient({ initialStudents }: AlumnosClientProps) {
   });
   const [isViewSheetOpen, setViewSheetOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [anunciosOpen, setAnunciosOpen] = useState(false);
+  const [notificacionesOpen, setNotificacionesOpen] = useState(false);
 
   const filteredStudents = useMemo(() => {
     return initialStudents.filter(student => {
@@ -73,17 +78,31 @@ export default function AlumnosClient({ initialStudents }: AlumnosClientProps) {
 
   return (
     <>
-      <AlumnosFilterBar filters={filters} setFilters={setFilters} onClear={handleClearFilters} />
-      <AlumnosTable
-        students={filteredStudents}
-        onViewStudent={handleViewStudent}
-        onEditStudent={handleEditStudent}
-      />
+      <div className="space-y-6">
+        <div className="flex items-start justify-between">
+            <div>
+                <h1 className="text-2xl font-bold font-headline">Gestión de Alumnos</h1>
+                <p className="text-muted-foreground">Busca, filtra y administra la información de todos los alumnos.</p>
+            </div>
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setAnunciosOpen(true)}>Anuncios</Button>
+                <Button variant="outline" onClick={() => setNotificacionesOpen(true)}>Notificaciones de Deuda</Button>
+            </div>
+        </div>
+        <AlumnosFilterBar filters={filters} setFilters={setFilters} onClear={handleClearFilters} />
+        <AlumnosTable
+          students={filteredStudents}
+          onViewStudent={handleViewStudent}
+          onEditStudent={handleEditStudent}
+        />
+      </div>
       <AlumnoViewSheet
         open={isViewSheetOpen}
         onOpenChange={setViewSheetOpen}
         student={selectedStudent}
       />
+      <AnunciosDialog open={anunciosOpen} onOpenChange={setAnunciosOpen} students={filteredStudents} />
+      <NotificacionesDeudaDialog open={notificacionesOpen} onOpenChange={setNotificacionesOpen} students={filteredStudents} />
     </>
   );
 }

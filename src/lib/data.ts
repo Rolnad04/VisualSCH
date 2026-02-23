@@ -10,6 +10,7 @@ import {
   User,
 } from './types';
 import { subDays, format } from 'date-fns';
+import { getImage } from './placeholder-images';
 
 export const users: User[] = [
   { id: 'user-1', name: 'Admin', email: 'admin@sportingclub.com', avatarUrl: 'https://picsum.photos/seed/admin/100/100', role: 'Administrador' },
@@ -374,7 +375,7 @@ export const packages: Package[] = [
 export const products: Product[] = [
   {
     id: 'prod-1',
-    imageUrl: 'https://picsum.photos/seed/uniform/200/200',
+    imageUrl: getImage('uniform')?.imageUrl || 'https://picsum.photos/seed/uniform/200/200',
     name: 'Camiseta y short',
     category: 'Uniforme',
     stock: 70,
@@ -382,7 +383,7 @@ export const products: Product[] = [
   },
   {
     id: 'prod-2',
-    imageUrl: 'https://picsum.photos/seed/vest/200/200',
+    imageUrl: getImage('vest')?.imageUrl || 'https://picsum.photos/seed/vest/200/200',
     name: 'Chaleco entrenamiento azul',
     category: 'Uniforme',
     stock: 84,

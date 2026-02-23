@@ -125,6 +125,7 @@ export type Product = {
   category: 'Uniforme' | 'Accesorio' | 'Bebida';
   stock: number;
   price: number;
+  imageHint?: string;
 };
 
 export type Attendance = {

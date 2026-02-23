@@ -93,7 +93,7 @@ export default function InventarioPage() {
                         {products.map((product) => (
                             <TableRow key={product.id}>
                                 <TableCell className="hidden sm:table-cell">
-                                    <Image src={product.imageUrl} alt={product.name} width={64} height={64} className="aspect-square rounded-md object-cover" data-ai-hint="soccer jersey" />
+                                    <Image src={product.imageUrl} alt={product.name} width={64} height={64} className="aspect-square rounded-md object-cover" {...(product.imageHint && { 'data-ai-hint': product.imageHint })} />
                                 </TableCell>
                                 <TableCell className="font-medium">{product.name}</TableCell>
                                 <TableCell>{product.category}</TableCell>

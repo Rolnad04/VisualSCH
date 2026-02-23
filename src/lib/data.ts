@@ -376,6 +376,7 @@ export const products: Product[] = [
   {
     id: 'prod-1',
     imageUrl: getImage('uniform')?.imageUrl || 'https://picsum.photos/seed/uniform/200/200',
+    imageHint: getImage('uniform')?.imageHint,
     name: 'Camiseta y short',
     category: 'Uniforme',
     stock: 70,
@@ -384,6 +385,7 @@ export const products: Product[] = [
   {
     id: 'prod-2',
     imageUrl: getImage('vest')?.imageUrl || 'https://picsum.photos/seed/vest/200/200',
+    imageHint: getImage('vest')?.imageHint,
     name: 'Chaleco entrenamiento azul',
     category: 'Uniforme',
     stock: 84,
@@ -392,6 +394,7 @@ export const products: Product[] = [
   {
     id: 'prod-3',
     imageUrl: 'https://picsum.photos/seed/ball/200/200',
+    imageHint: 'soccer ball',
     name: 'Balón de fútbol N°5',
     category: 'Accesorio',
     stock: 40,
@@ -400,6 +403,7 @@ export const products: Product[] = [
   {
     id: 'prod-4',
     imageUrl: 'https://picsum.photos/seed/water/200/200',
+    imageHint: 'water bottle',
     name: 'Botella de agua 1L',
     category: 'Bebida',
     stock: 150,

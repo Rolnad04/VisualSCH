@@ -13,8 +13,8 @@ import { subDays, subHours, addHours, format } from 'date-fns';
 import { getImage } from './placeholder-images';
 
 export const users: User[] = [
-  { id: 'user-1', name: 'Admin', email: 'admin@sportingclub.com', avatarUrl: 'https://picsum.photos/seed/admin/100/100', role: 'Administrador' },
-  { id: 'user-2', name: 'Sofia Rodriguez', email: 'sofia@sportingclub.com', avatarUrl: 'https://picsum.photos/seed/promo1/100/100', role: 'Promotora' },
+  { id: 'user-1', name: 'Admin', email: 'admin@example.com', avatarUrl: 'https://picsum.photos/seed/admin/100/100', role: 'Administrador' },
+  { id: 'user-2', name: 'Sofia Rodriguez', email: 'promotora@example.com', avatarUrl: 'https://picsum.photos/seed/promo1/100/100', role: 'Promotora' },
   { id: 'user-3', name: 'Luisa Martinez', email: 'luisa@sportingclub.com', avatarUrl: 'https://picsum.photos/seed/promo2/100/100', role: 'Promotora' },
 ]
 

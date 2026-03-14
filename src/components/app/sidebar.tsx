@@ -19,12 +19,14 @@ import {
   Warehouse,
   BarChart3,
   Settings,
-  Shield,
+  FilePenLine,
+  ShoppingCart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
-const navItems = [
+const adminNavItems = [
   { href: '/inicio', icon: Home, label: 'Inicio' },
   { href: '/solicitudes', icon: CheckCheck, label: 'Solicitudes' },
   { href: '/temporadas', icon: CalendarDays, label: 'Temporadas' },
@@ -36,8 +38,30 @@ const navItems = [
   { href: '/reportes', icon: BarChart3, label: 'Reportes' },
 ];
 
+const promoterNavItems = [
+  { href: '/inicio', icon: Home, label: 'Inicio' },
+  { href: '/inscripcion', icon: FilePenLine, label: 'Inscripción' },
+  { href: '/alumnos', icon: Users, label: 'Alumnos' },
+  { href: '/asistencia', icon: Swords, label: 'Asistencia' },
+  { href: '/categorias', icon: ListOrdered, label: 'Categorías' },
+  { href: '/ventas', icon: ShoppingCart, label: 'Ventas' },
+];
+
+
 export function Sidebar() {
   const pathname = usePathname();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem('userRole'));
+  }, []);
+
+  const navItems = userRole === 'Promotora' ? promoterNavItems : adminNavItems;
+  
+  if (!userRole) {
+    // Return a minimal sidebar or loading state to avoid layout shift
+     return <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex" />;
+  }
 
   return (
     <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">

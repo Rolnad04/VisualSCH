@@ -6,15 +6,30 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = (event: React.FormEvent) => {
     event.preventDefault();
-    // Here you would typically handle authentication
-    // For this demo, we'll just redirect to the dashboard
-    router.push('/inicio');
+    if (email === 'admin@example.com') { // For simplicity, password not checked for admin
+      localStorage.setItem('userRole', 'Administrador');
+      router.push('/inicio');
+    } else if (email === 'promotora@example.com' && password === '123') {
+      localStorage.setItem('userRole', 'Promotora');
+      router.push('/inicio');
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error de autenticación",
+        description: "El correo o la contraseña son incorrectos.",
+      });
+    }
   };
 
   return (
@@ -31,7 +46,14 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="admin@example.com" required />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="admin@example.com" 
+                required 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
@@ -40,7 +62,13 @@ export default function LoginPage() {
                   ¿Olvidó su contraseña?
                 </Link>
               </div>
-              <Input id="password" type="password" required />
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
               Iniciar Sesión

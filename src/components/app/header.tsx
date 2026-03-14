@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   CheckCheck,
@@ -14,10 +14,11 @@ import {
   BarChart3,
   Settings,
   PanelLeft,
-  Search,
-  Shield,
+  FilePenLine,
+  ShoppingCart,
 } from 'lucide-react';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
 import {
   Breadcrumb,
@@ -39,8 +40,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { users } from '@/lib/data';
+import type { User } from '@/lib/types';
 
-const navItems = [
+
+const adminNavItems = [
   { href: '/inicio', icon: Home, label: 'Inicio' },
   { href: '/solicitudes', icon: CheckCheck, label: 'Solicitudes' },
   { href: '/temporadas', icon: CalendarDays, label: 'Temporadas' },
@@ -52,11 +55,47 @@ const navItems = [
   { href: '/reportes', icon: BarChart3, label: 'Reportes' },
 ];
 
+const promoterNavItems = [
+  { href: '/inicio', icon: Home, label: 'Inicio' },
+  { href: '/inscripcion', icon: FilePenLine, label: 'Inscripción' },
+  { href: '/alumnos', icon: Users, label: 'Alumnos' },
+  { href: '/asistencia', icon: Swords, label: 'Asistencia' },
+  { href: '/categorias', icon: ListOrdered, label: 'Categorías' },
+  { href: '/ventas', icon: ShoppingCart, label: 'Ventas' },
+];
+
 export function Header() {
   const pathname = usePathname();
-  const currentUser = users[0]; // Assuming admin is logged in
+  const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | undefined>(undefined);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+    if (role === 'Promotora') {
+      setCurrentUser(users.find(u => u.role === 'Promotora'));
+    } else {
+      setCurrentUser(users.find(u => u.role === 'Administrador'));
+    }
+  }, []);
+
+  const navItems = userRole === 'Promotora' ? promoterNavItems : adminNavItems;
 
   const pageTitle = navItems.find((item) => pathname.startsWith(item.href))?.label || 'Dashboard';
+  
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    router.push('/login');
+  }
+
+  if (!currentUser) {
+    return (
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+            {/* Basic loading state or redirect logic */}
+        </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -121,8 +160,8 @@ export function Header() {
             <DropdownMenuItem>Configuración</DropdownMenuItem>
             <DropdownMenuItem>Soporte</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link href="/login">Cerrar Sesión</Link>
+            <DropdownMenuItem onClick={handleLogout}>
+                Cerrar Sesión
             </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

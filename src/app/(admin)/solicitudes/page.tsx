@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SolicitudesClient from '@/components/app/solicitudes/solicitudes-client';
 import { requests } from '@/lib/data';
 
-export default function SolicitudesPage() {
+function SolicitudesPageContent() {
   const searchParams = useSearchParams();
   const statusParam = searchParams.get('status');
   const defaultValue = statusParam || 'all';
@@ -107,5 +108,13 @@ export default function SolicitudesPage() {
         </Card>
       </TabsContent>
     </Tabs>
+  );
+}
+
+export default function SolicitudesPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <SolicitudesPageContent />
+    </Suspense>
   );
 }

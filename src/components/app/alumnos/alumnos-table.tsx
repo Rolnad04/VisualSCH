@@ -1,9 +1,8 @@
 'use client';
-import { MoreHorizontal } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Student } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,7 +11,6 @@ import { cn } from '@/lib/utils';
 type AlumnosTableProps = {
   students: Student[];
   onViewStudent: (student: Student) => void;
-  onEditStudent: (student: Student) => void;
 };
 
 const statusVariant = {
@@ -21,7 +19,7 @@ const statusVariant = {
     'Próximo a vencer': 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30'
 }
 
-export default function AlumnosTable({ students, onViewStudent, onEditStudent }: AlumnosTableProps) {
+export default function AlumnosTable({ students, onViewStudent }: AlumnosTableProps) {
   return (
     <Card>
       <CardContent className="pt-6">
@@ -60,20 +58,10 @@ export default function AlumnosTable({ students, onViewStudent, onEditStudent }:
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => onViewStudent(student)}>Ver Ficha</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEditStudent(student)}>Editar</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Deshabilitar</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button variant="ghost" size="icon" onClick={() => onViewStudent(student)} title="Ver Ficha">
+                    <Eye className="h-4 w-4" />
+                    <span className="sr-only">Ver Ficha</span>
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

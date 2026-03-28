@@ -10,18 +10,12 @@ type CategoryViewSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   category: Category | null;
-  onEdit: (category: Category) => void;
 };
 
-export default function CategoryViewSheet({ open, onOpenChange, category, onEdit }: CategoryViewSheetProps) {
+export default function CategoryViewSheet({ open, onOpenChange, category }: CategoryViewSheetProps) {
   if (!category) return null;
   
   const categoryStudents = students.filter(s => s.category === category.name);
-  
-  const handleEditClick = () => {
-    onOpenChange(false);
-    onEdit(category);
-  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -85,7 +79,6 @@ export default function CategoryViewSheet({ open, onOpenChange, category, onEdit
           <SheetClose asChild>
             <Button variant="outline">Cerrar</Button>
           </SheetClose>
-          <Button onClick={handleEditClick}>Editar</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>

@@ -57,11 +57,6 @@ export default function AlumnosClient({ initialStudents }: AlumnosClientProps) {
     setSelectedStudent(student);
     setViewSheetOpen(true);
   };
-
-  const handleEditStudent = (student: Student) => {
-    // Logic to open edit modal/sheet would go here
-    console.log('Editing student:', student.name);
-  };
   
   const handleClearFilters = () => {
     setFilters({
@@ -81,8 +76,8 @@ export default function AlumnosClient({ initialStudents }: AlumnosClientProps) {
       <div className="space-y-6">
         <div className="flex items-start justify-between">
             <div>
-                <h1 className="text-2xl font-bold font-headline">Gestión de Alumnos</h1>
-                <p className="text-muted-foreground">Busca, filtra y administra la información de todos los alumnos.</p>
+                <h1 className="text-2xl font-bold font-headline">Alumnos</h1>
+                <p className="text-muted-foreground">Consulta la información de todos los alumnos.</p>
             </div>
             <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setAnunciosOpen(true)}>Anuncios</Button>
@@ -93,7 +88,6 @@ export default function AlumnosClient({ initialStudents }: AlumnosClientProps) {
         <AlumnosTable
           students={filteredStudents}
           onViewStudent={handleViewStudent}
-          onEditStudent={handleEditStudent}
         />
       </div>
       <AlumnoViewSheet

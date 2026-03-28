@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, differenceInYears } from 'date-fns';
-import { Calendar as CalendarIcon, Upload, Check, Info, Users } from 'lucide-react';
+import { es } from 'date-fns/locale';
+import { Calendar as CalendarIcon, Upload, Check, Info, Users, ImagePlus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -45,6 +46,7 @@ const enrollmentSchema = z.object({
   }),
   sexo: z.enum(['Masculino', 'Femenino']),
   responsable: z.string().optional(),
+  apellidoResponsable: z.string().optional(),
   dniResponsable: z.string().max(8, "Máximo 8 dígitos").regex(/^\d*$/, "Solo se permiten números").optional(),
   deporte: z.string().default("Fútbol"),
   celular: z.string().regex(/^9\d{8}$/, "Debe comenzar con 9 y tener 9 dígitos").optional(),
@@ -57,7 +59,7 @@ const enrollmentSchema = z.object({
 }).refine((data) => {
   const age = differenceInYears(new Date(), data.fechaNacimiento);
   if (age < 18) {
-    return !!data.responsable && !!data.dniResponsable && !!data.celularResponsable;
+    return !!data.responsable && !!data.apellidoResponsable && !!data.dniResponsable && !!data.celularResponsable;
   }
   return !!data.celular;
 }, {
@@ -67,11 +69,21 @@ const enrollmentSchema = z.object({
 
 type EnrollmentValues = z.infer<typeof enrollmentSchema>;
 
+const MONTHS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: currentYear - 1940 + 1 }, (_, i) => currentYear - i);
+
 export default function InscripcionPage() {
   const { toast } = useToast();
   const [age, setAge] = useState<number | null>(null);
   const [photoEvidence, setPhotoEvidence] = useState<string | null>(null);
   const [studentPhoto, setStudentPhoto] = useState<string | null>(null);
+  const [additionalImage, setAdditionalImage] = useState<string | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 
   const form = useForm<EnrollmentValues>({
     resolver: zodResolver(enrollmentSchema),
@@ -92,6 +104,20 @@ export default function InscripcionPage() {
   const watchBirthDate = form.watch("fechaNacimiento");
   const watchHorario = form.watch("horario");
   const watchPaymentMethod = form.watch("metodoPago");
+
+  // Watchers for conditional responsable section
+  const watchDni = form.watch("dni");
+  const watchNombres = form.watch("nombres");
+  const watchApellidos = form.watch("apellidos");
+  const watchSexo = form.watch("sexo");
+
+  const isPersonalDataComplete = !!(
+    watchDni && watchDni.length === 8 &&
+    watchNombres && watchNombres.length >= 2 &&
+    watchApellidos && watchApellidos.length >= 2 &&
+    watchBirthDate &&
+    watchSexo
+  );
 
   useEffect(() => {
     if (watchBirthDate) {
@@ -119,6 +145,7 @@ export default function InscripcionPage() {
     form.reset();
     setPhotoEvidence(null);
     setStudentPhoto(null);
+    setAdditionalImage(null);
     setAge(null);
   };
 
@@ -201,7 +228,7 @@ export default function InscripcionPage() {
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value, "PPP")
+                                  format(field.value, "PPP", { locale: es })
                                 ) : (
                                   <span>Seleccione fecha</span>
                                 )}
@@ -210,10 +237,49 @@ export default function InscripcionPage() {
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
+                            {/* Selectores de Año y Mes */}
+                            <div className="flex gap-2 p-3 border-b">
+                              <Select
+                                value={String(calendarMonth.getMonth())}
+                                onValueChange={(val) => {
+                                  const newDate = new Date(calendarMonth);
+                                  newDate.setMonth(parseInt(val));
+                                  setCalendarMonth(newDate);
+                                }}
+                              >
+                                <SelectTrigger className="flex-1 h-9 text-sm">
+                                  <SelectValue placeholder="Mes" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {MONTHS.map((month, idx) => (
+                                    <SelectItem key={idx} value={String(idx)}>{month}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Select
+                                value={String(calendarMonth.getFullYear())}
+                                onValueChange={(val) => {
+                                  const newDate = new Date(calendarMonth);
+                                  newDate.setFullYear(parseInt(val));
+                                  setCalendarMonth(newDate);
+                                }}
+                              >
+                                <SelectTrigger className="w-[100px] h-9 text-sm">
+                                  <SelectValue placeholder="Año" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[200px]">
+                                  {YEARS.map((year) => (
+                                    <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <Calendar
                               mode="single"
                               selected={field.value}
                               onSelect={field.onChange}
+                              month={calendarMonth}
+                              onMonthChange={setCalendarMonth}
                               disabled={(date) =>
                                 date > new Date() || date < new Date("1900-01-01")
                               }
@@ -251,31 +317,54 @@ export default function InscripcionPage() {
             </Card>
 
             {/* --- Sección: Responsable / Contacto --- */}
-            <Card className="shadow-lg border-primary/10 h-fit">
+            <Card className={cn("shadow-lg border-primary/10 h-fit transition-all duration-500", !isPersonalDataComplete && "opacity-50")}>
               <CardHeader className="bg-primary/5">
                 <CardTitle className="text-lg">Responsable y Contacto</CardTitle>
                 <CardDescription>
-                  {age !== null && age < 18
+                  {!isPersonalDataComplete
+                    ? "Complete los datos personales primero."
+                    : age !== null && age < 18
                     ? "El alumno es menor de edad, se requiere datos del tutor."
                     : "Datos de contacto directo."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
-                {age !== null && age < 18 ? (
+                {!isPersonalDataComplete ? (
+                  <div className="flex items-center justify-center p-8 border-2 border-dashed rounded-lg bg-muted/20">
+                    <p className="text-sm text-muted-foreground text-center italic">
+                      Complete DNI, Nombres, Apellidos, Fecha de Nacimiento y Sexo para activar estos campos.
+                    </p>
+                  </div>
+                ) : age !== null && age < 18 ? (
                   <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-                    <FormField
-                      control={form.control}
-                      name="responsable"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nombre del Responsable</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nombre completo" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="responsable"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombres del Responsable</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Nombres" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="apellidoResponsable"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Apellidos del Responsable</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Apellidos" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -319,14 +408,6 @@ export default function InscripcionPage() {
                       </FormItem>
                     )}
                   />
-                )}
-
-                {age === null && (
-                  <div className="flex items-center justify-center p-8 border-2 border-dashed rounded-lg bg-muted/20">
-                    <p className="text-sm text-muted-foreground text-center italic">
-                      Seleccione la fecha de nacimiento para activar estos campos.
-                    </p>
-                  </div>
                 )}
               </CardContent>
             </Card>
@@ -469,6 +550,29 @@ export default function InscripcionPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Placeholder de imagen adicional */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none">Imagen Adicional</label>
+                  <div
+                    className="relative w-full h-40 border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-muted/20 cursor-pointer group hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+                    onClick={() => setAdditionalImage("https://picsum.photos/seed/additional/300/300")}
+                  >
+                    {additionalImage ? (
+                      <>
+                        <img src={additionalImage} alt="Imagen adicional" className="w-full h-full object-cover rounded-lg" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                          <Upload className="text-white h-6 w-6" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <ImagePlus className="h-10 w-10 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+                        <span className="text-sm text-muted-foreground mt-2 group-hover:text-primary/80 transition-colors">Subir imagen</span>
+                      </>
+                    )}
+                  </div>
+                </div>
 
                 <FormField
                   control={form.control}

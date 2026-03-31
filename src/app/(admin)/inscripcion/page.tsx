@@ -1,22 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, differenceInYears } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Upload, Check, Info, Users, ImagePlus } from 'lucide-react';
+import { Calendar as CalendarIcon, Upload, Check, Info, Users, RefreshCw, Clock } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
@@ -33,9 +33,45 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+
+// Category definition
+type CategoryDef = {
+  name: string;
+  label: string;
+  minAge: number;
+  maxAge: number;
+};
+
+const ACADEMY_CATEGORIES: CategoryDef[] = [
+  { name: 'Sub 6', label: 'Sub 6 (4-6 años)', minAge: 4, maxAge: 6 },
+  { name: 'Sub 8', label: 'Sub 8 (7-8 años)', minAge: 7, maxAge: 8 },
+  { name: 'Sub 10', label: 'Sub 10 (9-10 años)', minAge: 9, maxAge: 10 },
+  { name: 'Sub 12', label: 'Sub 12 (11-12 años)', minAge: 11, maxAge: 12 },
+  { name: 'Sub 13', label: 'Sub 13 (13 años)', minAge: 13, maxAge: 13 },
+  { name: 'Sub 15', label: 'Sub 15 (14-15 años)', minAge: 14, maxAge: 15 },
+  { name: 'Sub 17', label: 'Sub 17 (16-17 años)', minAge: 16, maxAge: 99 },
+];
+
+const DISTRITOS = [
+  'Huaraz', 'Independencia', 'Cochabamba', 'Colcabamba',
+  'Huanchay', 'Jangas', 'La Libertad', 'Olleros',
+  'Pampas', 'Pariacoto', 'Pira', 'Taricá',
+];
+
+const getAutoCategory = (age: number): string => {
+  const cat = ACADEMY_CATEGORIES.find(c => age >= c.minAge && age <= c.maxAge);
+  return cat ? cat.name : '';
+};
+
+const isAgeOutOfCategory = (age: number | null, categoryName: string): boolean => {
+  if (age === null || !categoryName) return false;
+  const cat = ACADEMY_CATEGORIES.find(c => c.name === categoryName);
+  if (!cat) return false;
+  return age < cat.minAge || age > cat.maxAge;
+};
 
 const enrollmentSchema = z.object({
   dni: z.string().length(8, "El DNI debe tener exactamente 8 dígitos").regex(/^\d+$/, "Solo se permiten números"),
@@ -54,6 +90,8 @@ const enrollmentSchema = z.object({
   temporada: z.string().default("Anual"),
   horario: z.string().min(1, "Debe seleccionar un horario"),
   profesor: z.string(),
+  distrito: z.string().min(1, "Debe seleccionar un distrito"),
+  categoria: z.string().min(1, "Debe seleccionar una categoría"),
   metodoPago: z.enum(['Yape', 'Efectivo', 'Transferencia']),
   observaciones: z.string().optional(),
 }).refine((data) => {
@@ -82,8 +120,10 @@ export default function InscripcionPage() {
   const [age, setAge] = useState<number | null>(null);
   const [photoEvidence, setPhotoEvidence] = useState<string | null>(null);
   const [studentPhoto, setStudentPhoto] = useState<string | null>(null);
-  const [additionalImage, setAdditionalImage] = useState<string | null>(null);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [obsTimestamp, setObsTimestamp] = useState<string | null>(null);
+  const [categoryManuallyChanged, setCategoryManuallyChanged] = useState(false);
+  const fileEvidenceRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<EnrollmentValues>({
     resolver: zodResolver(enrollmentSchema),
@@ -98,12 +138,16 @@ export default function InscripcionPage() {
       profesor: "",
       horario: "",
       observaciones: "",
+      distrito: "",
+      categoria: "",
     },
   });
 
   const watchBirthDate = form.watch("fechaNacimiento");
   const watchHorario = form.watch("horario");
   const watchPaymentMethod = form.watch("metodoPago");
+  const watchCategoria = form.watch("categoria");
+  const watchObservaciones = form.watch("observaciones");
 
   // Watchers for conditional responsable section
   const watchDni = form.watch("dni");
@@ -119,10 +163,17 @@ export default function InscripcionPage() {
     watchSexo
   );
 
+  const ageOutOfCategory = age !== null && isAgeOutOfCategory(age, watchCategoria);
+  const obsRequired = ageOutOfCategory && !watchObservaciones?.trim();
+
   useEffect(() => {
     if (watchBirthDate) {
       const calculatedAge = differenceInYears(new Date(), watchBirthDate);
       setAge(calculatedAge);
+      if (!categoryManuallyChanged) {
+        const autocat = getAutoCategory(calculatedAge);
+        if (autocat) form.setValue("categoria", autocat);
+      }
     }
   }, [watchBirthDate]);
 
@@ -136,8 +187,49 @@ export default function InscripcionPage() {
     }
   }, [watchHorario, form]);
 
+  const handleEvidenceUpload = () => {
+    // Simulate file picker — set a mock image
+    setPhotoEvidence("https://picsum.photos/seed/voucher/300/500");
+  };
+
+  const handleObsBlur = () => {
+    if (watchObservaciones && watchObservaciones.trim()) {
+      const now = new Date();
+      setObsTimestamp(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + now.toLocaleDateString('es-PE'));
+    }
+  };
+
   const onSubmit = (data: EnrollmentValues) => {
-    console.log("Submit data:", data);
+    // Extra validation: evidence photo required for Yape/Transferencia
+    if ((data.metodoPago === 'Yape' || data.metodoPago === 'Transferencia') && !photoEvidence) {
+      toast({
+        title: "Foto de evidencia requerida",
+        description: "Para pagos por Yape o Transferencia debe subir la foto del voucher.",
+        variant: "destructive"
+      });
+      return;
+    }
+    // Validation: minor without guardian data
+    if (age !== null && age < 18) {
+      if (!data.responsable || !data.apellidoResponsable || !data.dniResponsable || !data.celularResponsable) {
+        toast({
+          title: "Datos del responsable incompletos",
+          description: "El alumno es menor de edad. Debe ingresar los datos del responsable.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    // Validation: category out of age range requires observation
+    if (ageOutOfCategory && !data.observaciones?.trim()) {
+      toast({
+        title: "Observación requerida",
+        description: "Ha seleccionado una categoría fuera del rango de edad. Debe ingresar una observación explicando el motivo.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
       title: "Solicitud enviada",
       description: "La solicitud de inscripción ha sido enviada correctamente al administrador.",
@@ -145,8 +237,9 @@ export default function InscripcionPage() {
     form.reset();
     setPhotoEvidence(null);
     setStudentPhoto(null);
-    setAdditionalImage(null);
     setAge(null);
+    setObsTimestamp(null);
+    setCategoryManuallyChanged(false);
   };
 
   return (
@@ -287,6 +380,9 @@ export default function InscripcionPage() {
                             />
                           </PopoverContent>
                         </Popover>
+                        {age !== null && (
+                          <p className="text-xs text-muted-foreground mt-1">Edad calculada: <strong>{age} años</strong></p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -343,7 +439,7 @@ export default function InscripcionPage() {
                         name="responsable"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nombres del Responsable</FormLabel>
+                            <FormLabel>Nombres del Responsable <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
                               <Input placeholder="Nombres" {...field} />
                             </FormControl>
@@ -356,7 +452,7 @@ export default function InscripcionPage() {
                         name="apellidoResponsable"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Apellidos del Responsable</FormLabel>
+                            <FormLabel>Apellidos del Responsable <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
                               <Input placeholder="Apellidos" {...field} />
                             </FormControl>
@@ -371,7 +467,7 @@ export default function InscripcionPage() {
                         name="dniResponsable"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>DNI Responsable</FormLabel>
+                            <FormLabel>DNI Responsable <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
                               <Input placeholder="8 dígitos" {...field} maxLength={8} />
                             </FormControl>
@@ -384,7 +480,7 @@ export default function InscripcionPage() {
                         name="celularResponsable"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Celular Responsable</FormLabel>
+                            <FormLabel>Celular Responsable <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
                               <Input placeholder="Empieza con 9" {...field} maxLength={9} />
                             </FormControl>
@@ -416,7 +512,7 @@ export default function InscripcionPage() {
             <Card className="shadow-lg border-primary/10">
               <CardHeader className="bg-primary/5">
                 <CardTitle className="text-lg">Información de la Academia</CardTitle>
-                <CardDescription>Deporte, temporada y horarios.</CardDescription>
+                <CardDescription>Deporte, temporada, horarios y categoría.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -462,6 +558,69 @@ export default function InscripcionPage() {
                   />
                 </div>
 
+                {/* Distrito */}
+                <FormField
+                  control={form.control}
+                  name="distrito"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Distrito</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione distrito" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {DISTRITOS.map(d => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Categoría con auto-selección por edad */}
+                <FormField
+                  control={form.control}
+                  name="categoria"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoría</FormLabel>
+                      <Select
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          setCategoryManuallyChanged(true);
+                        }}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione categoría" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ACADEMY_CATEGORIES.map(cat => (
+                            <SelectItem key={cat.name} value={cat.name}>{cat.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {age !== null && field.value && ageOutOfCategory && (
+                        <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded-md mt-1">
+                          <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                          <p className="text-xs text-amber-700">
+                            La categoría seleccionada no corresponde a la edad del alumno ({age} años). 
+                            Se requiere una <strong>observación obligatoria</strong> para continuar.
+                          </p>
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -503,7 +662,7 @@ export default function InscripcionPage() {
               </CardContent>
             </Card>
 
-            {/* --- Sección: Pago y Evidencia --- */}
+            {/* --- Sección: Pago y Observaciones --- */}
             <Card className="shadow-lg border-primary/10">
               <CardHeader className="bg-primary/5">
                 <CardTitle className="text-lg">Pago y Observaciones</CardTitle>
@@ -533,56 +692,79 @@ export default function InscripcionPage() {
                   )}
                 />
 
+                {/* Evidence Photo — shown for Yape/Transferencia */}
                 {(watchPaymentMethod === "Yape" || watchPaymentMethod === "Transferencia") && (
                   <div className="space-y-2 animate-in fade-in duration-300">
-                    <label className="text-sm font-medium leading-none">Foto Evidencia (Voucher)</label>
-                    <div className="flex items-center gap-4 py-2">
+                    <label className="text-sm font-medium leading-none flex items-center gap-1">
+                      Foto de Evidencia
+                      <span className="text-red-500 text-xs ml-1">* (obligatoria)</span>
+                    </label>
+                    {/* Image upload area */}
+                    <div
+                      className={cn(
+                        "relative w-full rounded-lg border-2 border-dashed flex flex-col items-center justify-center bg-muted/20 cursor-pointer group hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 overflow-hidden",
+                        photoEvidence ? "h-48" : "h-36"
+                      )}
+                      onClick={!photoEvidence ? handleEvidenceUpload : undefined}
+                    >
+                      {photoEvidence ? (
+                        <>
+                          <img src={photoEvidence} alt="Foto de evidencia" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Check className="h-8 w-8 text-white" />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-8 w-8 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+                          <span className="text-sm text-muted-foreground mt-2 group-hover:text-primary/80 transition-colors">
+                            Toca para subir el voucher
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {/* Change button when image is loaded */}
+                    {photoEvidence && (
                       <Button
                         type="button"
                         variant="outline"
-                        className="gap-2"
-                        onClick={() => setPhotoEvidence("https://picsum.photos/seed/voucher/300/500")}
+                        size="sm"
+                        className="gap-2 w-full"
+                        onClick={handleEvidenceUpload}
                       >
-                        <Upload className="h-4 w-4" />
-                        Subir evidencia
+                        <RefreshCw className="h-4 w-4" />
+                        Cambiar
                       </Button>
-                      {photoEvidence && <Check className="text-green-500 h-5 w-5" />}
-                    </div>
-                  </div>
-                )}
-
-                {/* Placeholder de imagen adicional */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none">Imagen Adicional</label>
-                  <div
-                    className="relative w-full h-40 border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-muted/20 cursor-pointer group hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
-                    onClick={() => setAdditionalImage("https://picsum.photos/seed/additional/300/300")}
-                  >
-                    {additionalImage ? (
-                      <>
-                        <img src={additionalImage} alt="Imagen adicional" className="w-full h-full object-cover rounded-lg" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
-                          <Upload className="text-white h-6 w-6" />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <ImagePlus className="h-10 w-10 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
-                        <span className="text-sm text-muted-foreground mt-2 group-hover:text-primary/80 transition-colors">Subir imagen</span>
-                      </>
                     )}
                   </div>
-                </div>
+                )}
 
                 <FormField
                   control={form.control}
                   name="observaciones"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Observaciones</FormLabel>
+                      <FormLabel>
+                        Observaciones
+                        {ageOutOfCategory && <span className="text-red-500 text-xs ml-1">* (obligatorio por cambio de categoría)</span>}
+                      </FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Cualquier observación para el administrador..." className="min-h-[80px]" {...field} />
+                        <Textarea
+                          placeholder="Cualquier observación para el administrador..."
+                          className={cn("min-h-[80px]", ageOutOfCategory && !watchObservaciones?.trim() && "border-amber-400 focus-visible:ring-amber-400")}
+                          {...field}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            handleObsBlur();
+                          }}
+                        />
                       </FormControl>
+                      {obsTimestamp && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                          <Clock className="h-3 w-3" />
+                          <span>Modificado: {obsTimestamp}</span>
+                        </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -623,7 +805,11 @@ export default function InscripcionPage() {
           </Card>
 
           <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg" className="w-full md:w-auto px-12 bg-gradient-to-r from-primary to-blue-700 hover:opacity-90 transition-all font-bold">
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full md:w-auto px-12 bg-gradient-to-r from-primary to-blue-700 hover:opacity-90 transition-all font-bold"
+            >
               Enviar solicitud de inscripción
             </Button>
           </div>

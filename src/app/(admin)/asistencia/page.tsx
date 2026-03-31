@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { attendances as initialAttendances, categories, professors, students, users } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { FilterX, CheckCircle2, Clock, Save, UserCheck } from 'lucide-react';
+import { FilterX, CheckCircle2, Clock, Save, UserCheck, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -76,6 +76,15 @@ export default function AsistenciaPage() {
       return true;
     });
   }, [localAttendances, filters]);
+
+  // Calculate attendance percentage
+  const attendanceStats = useMemo(() => {
+    const presentCount = filteredAttendances.filter(a => a?.status === 'Presente').length;
+    const totalRegistered = filteredAttendances.length;
+    const totalInFilter = totalRegistered + studentsWithoutAttendance.length;
+    const percentage = totalInFilter > 0 ? Math.round((presentCount / totalInFilter) * 100) : 0;
+    return { presentCount, totalRegistered, totalInFilter, percentage };
+  }, [filteredAttendances, studentsWithoutAttendance]);
 
   const handleMarkPresent = (studentId: string) => {
     const newAttendance: Attendance = {
@@ -170,6 +179,53 @@ export default function AsistenciaPage() {
             <FilterX className="mr-2 h-4 w-4" />
             Limpiar Filtros
        </Button>
+      </div>
+
+      {/* Attendance percentage card */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="p-4 col-span-1 sm:col-span-3">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="relative h-16 w-16">
+                <svg className="h-16 w-16 -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.9" fill="none" strokeWidth="3" className="stroke-muted" />
+                  <circle
+                    cx="18" cy="18" r="15.9" fill="none" strokeWidth="3"
+                    stroke="hsl(var(--primary))"
+                    strokeDasharray={`${attendanceStats.percentage} ${100 - attendanceStats.percentage}`}
+                    strokeLinecap="round"
+                    className="transition-all duration-700"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-bold">{attendanceStats.percentage}%</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Asistencia del día</p>
+                <p className="text-xs text-muted-foreground">{attendanceStats.presentCount} presentes de {attendanceStats.totalInFilter} alumnos</p>
+              </div>
+            </div>
+            <div className="flex gap-6 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-green-500" />
+                <span className="text-sm text-muted-foreground">Presentes: <strong>{attendanceStats.presentCount}</strong></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-red-500" />
+                <span className="text-sm text-muted-foreground">Faltas: <strong>{filteredAttendances.filter(a => a?.status === 'Falta').length}</strong></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-amber-500" />
+                <span className="text-sm text-muted-foreground">Sin marcar: <strong>{studentsWithoutAttendance.length}</strong></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Total en filtro: <strong>{attendanceStats.totalInFilter}</strong></span>
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Alumnos sin marcar asistencia */}

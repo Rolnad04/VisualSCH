@@ -21,6 +21,7 @@ import {
   Settings,
   FilePenLine,
   ShoppingCart,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -45,6 +46,7 @@ const promoterNavItems = [
   { href: '/asistencia', icon: Swords, label: 'Asistencia' },
   { href: '/categorias', icon: ListOrdered, label: 'Categorías' },
   { href: '/ventas', icon: ShoppingCart, label: 'Ventas' },
+  { href: '/deudas', icon: CreditCard, label: 'Cobro de Deudas' },
 ];
 
 

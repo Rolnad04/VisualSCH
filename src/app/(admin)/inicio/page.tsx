@@ -236,10 +236,9 @@ export default function Dashboard() {
                         : `${activity.title} de ${activity.studentName}`}
                     </p>
                   </div>
-                  <div className="ml-auto text-sm text-muted-foreground">
-                    {activity.type === 'request'
-                      ? new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      : 'Hoy'}
+                  <div className="ml-auto text-sm text-muted-foreground text-right">
+                    <div>{new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div className="text-xs">{activity.type === 'attendance' ? 'Asistencia' : ''}</div>
                   </div>
                 </div>
               ))}

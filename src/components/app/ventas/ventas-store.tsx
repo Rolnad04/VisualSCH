@@ -111,13 +111,11 @@ const storeProducts: StoreProduct[] = [
 ];
 
 // ─── Root Store Component ────────────────────────────────────────────────
-// ─── Root Store Component ────────────────────────────────────────────────
 export function VentasStore() {
   const { toast } = useToast();
 
   // View state
   const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(null);
-  const [isZoomed, setIsZoomed] = useState(false);
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -149,7 +147,7 @@ export function VentasStore() {
         ];
       });
 
-      // Open cart curtain immediately
+      // Open ORDER SUMMARY panel automatically
       setIsCartOpen(true);
 
       toast({
@@ -172,7 +170,7 @@ export function VentasStore() {
     setCart((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
-  const handleCheckout = useCallback(() => {
+  const handleCheckout = useCallback((buyerData: Record<string, unknown>) => {
     const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     toast({
       title: 'Pedido registrado',
@@ -189,42 +187,42 @@ export function VentasStore() {
 
   const handleBack = useCallback(() => {
     setSelectedProduct(null);
-  }, []);
-
-  const handleToggleZoom = useCallback(() => {
-    setIsZoomed((z) => !z);
+    setIsCartOpen(false);
   }, []);
 
   // ─── Render ──────────────────────────────────────────────────────
   return (
+    /* ── LayoutGroup: required for cross-component layoutId animation ── */
     <LayoutGroup>
-      <div className="relative min-h-screen overflow-hidden bg-white">
-        {/* Persistent Background Grid */}
+      {/* ── Layer 1: THE VIEWPORT — relative w-full h-full (NOT h-screen, NOT fixed) ── */}
+      {/* ── Scoped to this component's container. Never escapes to global viewport. ── */}
+      <div className="relative w-full h-[calc(100vh-6rem)] overflow-hidden bg-white">
+        {/* Layer 2: Grid Canvas (zooms 4.3x + fades on select) */}
         <ProductGrid
           products={storeProducts}
-          isZoomed={isZoomed}
-          onToggleZoom={handleToggleZoom}
-          onProductClick={handleProductClick}
           selectedProductId={selectedProduct?.id || null}
+          onProductClick={handleProductClick}
         />
 
-        {/* Focus Detail Overlay */}
+        {/* Layer 3: Detail Overlay (layoutId image flight + UI) */}
         <AnimatePresence>
           {selectedProduct && (
             <ProductDetail
-              key="spatial-overlay"
+              key={selectedProduct.id}
               product={selectedProduct}
               onBack={handleBack}
               onAddToCart={addToCart}
+              isCartOpen={isCartOpen}
             />
           )}
         </AnimatePresence>
 
-        {/* Global UI Elements */}
+        {/* ── Cart Badge — absolute within container, NEVER fixed ── */}
         <motion.button
           onClick={() => setIsCartOpen(!isCartOpen)}
-          className="fixed top-28 right-8 z-[55] text-black/60 hover:text-black transition-colors"
+          className="absolute bottom-8 right-8 z-[50] text-black/60 hover:text-black transition-colors"
           whileTap={{ scale: 0.9 }}
+          transition={{ type: 'tween', duration: 0.15 }}
         >
           <div className="relative">
             <ShoppingBag className="h-5 w-5" />
@@ -233,6 +231,7 @@ export function VentasStore() {
                 key={totalItems}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
+                transition={{ type: 'tween', duration: 0.2 }}
                 className="absolute -top-2 -right-2 h-3.5 w-3.5 bg-black text-white text-[8px] font-bold flex items-center justify-center rounded-full"
               >
                 {totalItems}
@@ -241,7 +240,7 @@ export function VentasStore() {
           </div>
         </motion.button>
 
-        {/* Cart panel */}
+        {/* Cart Panel (slides from right, INSIDE container) */}
         <CartPanel
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
@@ -254,4 +253,3 @@ export function VentasStore() {
     </LayoutGroup>
   );
 }
-

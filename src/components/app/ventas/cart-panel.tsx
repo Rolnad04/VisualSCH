@@ -31,10 +31,10 @@ export type BuyerData = {
   responsableTelefono: string;
 };
 
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 30,
+const tweenTransition = {
+  type: 'tween' as const,
+  ease: [0.32, 0.72, 0, 1] as number[],
+  duration: 0.4,
 };
 
 const monoFont = { fontFamily: 'monospace, "Courier New", Courier' };
@@ -101,17 +101,17 @@ export function CartPanel({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-[58] bg-black/10"
+            className="absolute inset-0 z-[58] bg-black/10"
           />
 
-          {/* ── Cart panel — slides from right with spring physics ── */}
+          {/* ── Cart panel — slides from right with tween physics ── */}
           <motion.div
             key="cart-panel"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={springTransition}
-            className="fixed top-0 right-0 bottom-0 z-[59] w-full max-w-[700px] overflow-y-auto"
+            transition={tweenTransition}
+            className="absolute top-0 right-0 bottom-0 z-[59] w-full max-w-[700px] overflow-y-auto"
             style={{ backgroundColor: '#ffffff' }}
           >
             <div className="flex h-full">
@@ -130,7 +130,7 @@ export function CartPanel({
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...springTransition, delay: 0.1 }}
+                  transition={{ ...tweenTransition, delay: 0.1 }}
                 >
                   <h3
                     className="text-[11px] tracking-[0.25em] text-black uppercase font-medium mb-4"
@@ -202,7 +202,7 @@ export function CartPanel({
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      transition={springTransition}
+                      transition={tweenTransition}
                       className="overflow-hidden"
                     >
                       <div className="border-t border-black/10 pt-5 mb-5">
@@ -282,7 +282,7 @@ export function CartPanel({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...springTransition, delay: 0.2 }}
+                  transition={{ ...tweenTransition, delay: 0.2 }}
                   className="mt-4"
                 >
                   <button
@@ -305,7 +305,7 @@ export function CartPanel({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...springTransition, delay: 0.15 }}
+                  transition={{ ...tweenTransition, delay: 0.15 }}
                 >
                   <h3
                     className="text-[11px] tracking-[0.25em] text-black uppercase font-medium mb-6"
@@ -324,7 +324,7 @@ export function CartPanel({
                           initial={{ opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 20 }}
-                          transition={springTransition}
+                          transition={tweenTransition}
                           className="flex gap-3"
                         >
                           <img

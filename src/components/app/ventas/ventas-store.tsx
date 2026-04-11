@@ -111,6 +111,7 @@ const storeProducts: StoreProduct[] = [
 ];
 
 // ─── Root Store Component ────────────────────────────────────────────────
+// ─── Root Store Component ────────────────────────────────────────────────
 export function VentasStore() {
   const { toast } = useToast();
 
@@ -148,7 +149,7 @@ export function VentasStore() {
         ];
       });
 
-      // Open cart curtain immediately (Mechanic 5)
+      // Open cart curtain immediately
       setIsCartOpen(true);
 
       toast({
@@ -197,8 +198,29 @@ export function VentasStore() {
   // ─── Render ──────────────────────────────────────────────────────
   return (
     <LayoutGroup>
-      <div className="relative min-h-screen -m-4 sm:-mx-6 sm:-my-0" style={{ backgroundColor: '#ffffff' }}>
-        {/* Cart button — always visible, bag icon like Yeezy */}
+      <div className="relative min-h-screen overflow-hidden bg-white">
+        {/* Persistent Background Grid */}
+        <ProductGrid
+          products={storeProducts}
+          isZoomed={isZoomed}
+          onToggleZoom={handleToggleZoom}
+          onProductClick={handleProductClick}
+          selectedProductId={selectedProduct?.id || null}
+        />
+
+        {/* Focus Detail Overlay */}
+        <AnimatePresence>
+          {selectedProduct && (
+            <ProductDetail
+              key="spatial-overlay"
+              product={selectedProduct}
+              onBack={handleBack}
+              onAddToCart={addToCart}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Global UI Elements */}
         <motion.button
           onClick={() => setIsCartOpen(!isCartOpen)}
           className="fixed top-28 right-8 z-[55] text-black/60 hover:text-black transition-colors"
@@ -219,38 +241,6 @@ export function VentasStore() {
           </div>
         </motion.button>
 
-        {/* Grid view */}
-        <AnimatePresence mode="sync">
-          {!selectedProduct && (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ProductGrid
-                products={storeProducts}
-                isZoomed={isZoomed}
-                onToggleZoom={handleToggleZoom}
-                onProductClick={handleProductClick}
-                selectedProductId={null}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Detail view */}
-        <AnimatePresence mode="sync">
-          {selectedProduct && (
-            <ProductDetail
-              key="detail"
-              product={selectedProduct}
-              onBack={handleBack}
-              onAddToCart={addToCart}
-            />
-          )}
-        </AnimatePresence>
-
         {/* Cart panel */}
         <CartPanel
           isOpen={isCartOpen}
@@ -264,3 +254,4 @@ export function VentasStore() {
     </LayoutGroup>
   );
 }
+

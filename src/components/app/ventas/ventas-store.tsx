@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { AnimatePresence, LayoutGroup } from 'framer-motion';
+import { useState, useCallback, useRef } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import { ProductGrid } from './product-grid';
 import { ProductDetail, type StoreProduct } from './product-detail';
 import { CartPanel, type CartItem } from './cart-panel';
+
+// ── STRICTLY PROHIBITED: type: "spring" ──
+const cinematicTransition = {
+  type: 'tween' as const,
+  ease: [0.32, 0.72, 0, 1],
+  duration: 0.6,
+};
 
 // ─── Product data with sizes ─────────────────────────────────────────────
 const storeProducts: StoreProduct[] = [
@@ -117,6 +124,10 @@ export function VentasStore() {
   // View state
   const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(null);
 
+  // ── Anchor origin for grid zoom: dynamically set transformOrigin ──
+  const [zoomOrigin, setZoomOrigin] = useState<string>('center center');
+  const gridRef = useRef<HTMLDivElement>(null);
+
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -147,7 +158,7 @@ export function VentasStore() {
         ];
       });
 
-      // Open ORDER SUMMARY panel automatically
+      // ── RULE 4: automatically open Order Summary panel ──
       setIsCartOpen(true);
 
       toast({
@@ -181,7 +192,9 @@ export function VentasStore() {
   }, [cart, toast]);
 
   // ─── Navigation handlers ─────────────────────────────────────────
-  const handleProductClick = useCallback((product: StoreProduct) => {
+  const handleProductClick = useCallback((product: StoreProduct, originX: number, originY: number) => {
+    // ── RULE 3 / Anchor: set transformOrigin dynamically from click coordinates ──
+    setZoomOrigin(`${originX}px ${originY}px`);
     setSelectedProduct(product);
   }, []);
 
@@ -192,64 +205,81 @@ export function VentasStore() {
 
   // ─── Render ──────────────────────────────────────────────────────
   return (
-    /* ── LayoutGroup: required for cross-component layoutId animation ── */
-    <LayoutGroup>
-      {/* ── Layer 1: THE VIEWPORT — relative w-full h-full (NOT h-screen, NOT fixed) ── */}
-      {/* ── Scoped to this component's container. Never escapes to global viewport. ── */}
-      <div className="relative w-full h-[calc(100vh-6rem)] overflow-hidden bg-white">
-        {/* Layer 2: Grid Canvas (zooms 4.3x + fades on select) */}
+    /* ── RULE 1: Sandbox container — relative w-full h-full overflow-hidden bg-[#F5F5F5] ── */
+    <div className="relative w-full h-[calc(100vh-6rem)] overflow-hidden bg-[#F5F5F5]">
+
+      {/* ── ESQUINA SUP. IZQUIERDA: back (<) when detail is open, otherwise nothing ── */}
+      <AnimatePresence>
+        {selectedProduct ? (
+          <motion.button
+            key="back-btn"
+            onClick={handleBack}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            transition={cinematicTransition}
+            className="absolute top-6 left-6 z-50 text-xl font-light cursor-pointer
+                       text-black/50 hover:text-black transition-colors"
+            style={{ fontFamily: 'monospace' }}
+          >
+            {'<'}
+          </motion.button>
+        ) : null}
+      </AnimatePresence>
+
+      {/* ── ESQUINA SUP. DERECHA: Cart icon — absolute, NEVER fixed ── */}
+      <motion.button
+        onClick={() => setIsCartOpen(!isCartOpen)}
+        className="absolute top-6 right-6 z-50 text-black/60 hover:text-black transition-colors cursor-pointer"
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: 'tween', duration: 0.15 }}
+      >
+        <div className="relative">
+          <ShoppingBag className="h-5 w-5" />
+          {totalItems > 0 && (
+            <motion.span
+              key={totalItems}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'tween', duration: 0.2 }}
+              className="absolute -top-2 -right-2 h-3.5 w-3.5 bg-black text-white text-[8px] font-bold flex items-center justify-center rounded-full"
+            >
+              {totalItems}
+            </motion.span>
+          )}
+        </div>
+      </motion.button>
+
+      {/* ── CAPA FONDO (Layer 2): Grid Canvas — zooms 4.3x from anchor + fades ── */}
+      <div ref={gridRef} className="absolute inset-0" style={{ transformOrigin: zoomOrigin }}>
         <ProductGrid
           products={storeProducts}
           selectedProductId={selectedProduct?.id || null}
           onProductClick={handleProductClick}
         />
-
-        {/* Layer 3: Detail Overlay (layoutId image flight + UI) */}
-        <AnimatePresence>
-          {selectedProduct && (
-            <ProductDetail
-              key={selectedProduct.id}
-              product={selectedProduct}
-              onBack={handleBack}
-              onAddToCart={addToCart}
-              isCartOpen={isCartOpen}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* ── Cart Badge — absolute within container, NEVER fixed ── */}
-        <motion.button
-          onClick={() => setIsCartOpen(!isCartOpen)}
-          className="absolute bottom-8 right-8 z-[50] text-black/60 hover:text-black transition-colors"
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: 'tween', duration: 0.15 }}
-        >
-          <div className="relative">
-            <ShoppingBag className="h-5 w-5" />
-            {totalItems > 0 && (
-              <motion.span
-                key={totalItems}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'tween', duration: 0.2 }}
-                className="absolute -top-2 -right-2 h-3.5 w-3.5 bg-black text-white text-[8px] font-bold flex items-center justify-center rounded-full"
-              >
-                {totalItems}
-              </motion.span>
-            )}
-          </div>
-        </motion.button>
-
-        {/* Cart Panel (slides from right, INSIDE container) */}
-        <CartPanel
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          cart={cart}
-          onUpdateQuantity={updateQuantity}
-          onRemoveItem={removeItem}
-          onCheckout={handleCheckout}
-        />
       </div>
-    </LayoutGroup>
+
+      {/* ── CAPA FRONTAL (Layer 3): Detail Overlay — static centered fade-in/out ── */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <ProductDetail
+            key={selectedProduct.id}
+            product={selectedProduct}
+            onBack={handleBack}
+            onAddToCart={addToCart}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Cart Panel (slides from right, INSIDE container) ── */}
+      <CartPanel
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cart}
+        onUpdateQuantity={updateQuantity}
+        onRemoveItem={removeItem}
+        onCheckout={handleCheckout}
+      />
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -158,7 +158,7 @@ export function VentasStore() {
         ];
       });
 
-      // ── RULE 4: automatically open Order Summary panel ──
+      // ── RULE 5: automatically open Order Summary panel ──
       setIsCartOpen(true);
 
       toast({
@@ -208,68 +208,88 @@ export function VentasStore() {
     /* ── RULE 1: Sandbox container — relative w-full h-full overflow-hidden bg-[#F5F5F5] ── */
     <div className="relative w-full h-[calc(100vh-6rem)] overflow-hidden bg-[#F5F5F5]">
 
-      {/* ── ESQUINA SUP. IZQUIERDA: back (<) when detail is open, otherwise nothing ── */}
-      <AnimatePresence>
-        {selectedProduct ? (
-          <motion.button
-            key="back-btn"
-            onClick={handleBack}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -8 }}
-            transition={cinematicTransition}
-            className="absolute top-6 left-6 z-50 text-xl font-light cursor-pointer
-                       text-black/50 hover:text-black transition-colors"
-            style={{ fontFamily: 'monospace' }}
-          >
-            {'<'}
-          </motion.button>
-        ) : null}
-      </AnimatePresence>
+      {/* ── LayoutGroup: enables shared layoutId between Grid and Detail ──
+           This is CRITICAL for the FLIP flight animation.
+           The Grid (Layer 2) and the Detail Overlay (Layer 3) must be siblings
+           inside the same LayoutGroup so motion can interpolate the image
+           position/size via the shared layoutId.
+      */}
+      <LayoutGroup>
 
-      {/* ── ESQUINA SUP. DERECHA: Cart icon — absolute, NEVER fixed ── */}
-      <motion.button
-        onClick={() => setIsCartOpen(!isCartOpen)}
-        className="absolute top-6 right-6 z-50 text-black/60 hover:text-black transition-colors cursor-pointer"
-        whileTap={{ scale: 0.9 }}
-        transition={{ type: 'tween', duration: 0.15 }}
-      >
-        <div className="relative">
-          <ShoppingBag className="h-5 w-5" />
-          {totalItems > 0 && (
-            <motion.span
-              key={totalItems}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'tween', duration: 0.2 }}
-              className="absolute -top-2 -right-2 h-3.5 w-3.5 bg-black text-white text-[8px] font-bold flex items-center justify-center rounded-full"
+        {/* ── ESQUINA SUP. IZQUIERDA: back (<) when detail is open, otherwise nothing ── */}
+        <AnimatePresence>
+          {selectedProduct ? (
+            <motion.button
+              key="back-btn"
+              onClick={handleBack}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={cinematicTransition}
+              className="absolute top-6 left-6 z-50 text-xl font-light cursor-pointer
+                         text-black/50 hover:text-black transition-colors"
+              style={{ fontFamily: 'monospace' }}
             >
-              {totalItems}
-            </motion.span>
-          )}
-        </div>
-      </motion.button>
+              {'<'}
+            </motion.button>
+          ) : null}
+        </AnimatePresence>
 
-      {/* ── CAPA FONDO (Layer 2): Grid Canvas — zooms 4.3x from anchor + fades ── */}
-      <div ref={gridRef} className="absolute inset-0" style={{ transformOrigin: zoomOrigin }}>
-        <ProductGrid
-          products={storeProducts}
-          selectedProductId={selectedProduct?.id || null}
-          onProductClick={handleProductClick}
-        />
-      </div>
+        {/* ── ESQUINA SUP. DERECHA: Cart icon — absolute, NEVER fixed ── */}
+        <motion.button
+          onClick={() => setIsCartOpen(!isCartOpen)}
+          className="absolute top-6 right-6 z-50 text-black/60 hover:text-black transition-colors cursor-pointer"
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: 'tween', duration: 0.15 }}
+        >
+          <div className="relative">
+            <ShoppingBag className="h-5 w-5" />
+            {totalItems > 0 && (
+              <motion.span
+                key={totalItems}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'tween', duration: 0.2 }}
+                className="absolute -top-2 -right-2 h-3.5 w-3.5 bg-black text-white text-[8px] font-bold flex items-center justify-center rounded-full"
+              >
+                {totalItems}
+              </motion.span>
+            )}
+          </div>
+        </motion.button>
 
-      {/* ── CAPA FRONTAL (Layer 3): Detail Overlay — static centered fade-in/out ── */}
-      <AnimatePresence>
-        {selectedProduct && (
-          <ProductDetail
-            key={selectedProduct.id}
-            product={selectedProduct}
-            onBack={handleBack}
-            onAddToCart={addToCart}
+        {/* ── CAPA FONDO (Layer 2): Grid Canvas — zooms 4.3x from anchor + fades ──
+             The Grid contains <motion.img> elements with layoutId={product.id}.
+             transformOrigin is injected dynamically based on click position.
+        */}
+        <div ref={gridRef} className="absolute inset-0" style={{ transformOrigin: zoomOrigin }}>
+          <ProductGrid
+            products={storeProducts}
+            selectedProductId={selectedProduct?.id || null}
+            onProductClick={handleProductClick}
           />
-        )}
-      </AnimatePresence>
+        </div>
+
+        {/* ── CAPA FRONTAL (Layer 3): Detail Overlay — RENDERED INDEPENDENTLY ──
+             RULE 3: This AnimatePresence is a SIBLING of the grid, NOT nested inside it.
+             This allows the <motion.img> with matching layoutId to "fly" from its
+             grid position to the centered detail position without being distorted
+             by the grid's scale: 4.3 zoom animation.
+             RULE 4: On exit, the overlay fades out in the center (exit={{ opacity: 0 }}).
+             The image does NOT fly back to the grid.
+        */}
+        <AnimatePresence>
+          {selectedProduct && (
+            <ProductDetail
+              key={selectedProduct.id}
+              product={selectedProduct}
+              onBack={handleBack}
+              onAddToCart={addToCart}
+            />
+          )}
+        </AnimatePresence>
+
+      </LayoutGroup>
 
       {/* ── Cart Panel (slides from right, INSIDE container) ── */}
       <CartPanel

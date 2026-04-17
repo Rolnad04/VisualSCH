@@ -48,7 +48,10 @@ export function ProductDetail({ product, onBack, onAddToCart }: ProductDetailPro
   };
 
   return (
-    /* ── CAPA FRONTAL: Overlay estático centrado con inset-0 ── */
+    /* ── CAPA FRONTAL: Overlay estático centrado con inset-0 ──
+         RULE 4 (EXIT): The image does NOT fly back. The entire overlay fades out
+         in the center with exit={{ opacity: 0 }}.
+    */
     <motion.div
       className="absolute inset-0 z-[40] flex flex-col items-center justify-center"
       style={{ backgroundColor: '#F5F5F5' }}
@@ -57,17 +60,28 @@ export function ProductDetail({ product, onBack, onAddToCart }: ProductDetailPro
       exit={{ opacity: 0 }}
       transition={cinematicTransition}
     >
-      {/* ── Product Image: FORCED max-h-[55vh] ── */}
-      <img
+      {/* ── Product Image: FLIP flight via shared layoutId ──
+           RULE 3: The <motion.img> in the grid and this one share the same
+           layoutId so the image flies from its original grid position to
+           this centered max-h-[55vh] without distortion.
+           The AnimatePresence of this overlay is rendered INDEPENDENTLY
+           of the grid so the image scales correctly.
+      */}
+      <motion.img
+        layoutId={`product-image-${product.id}`}
         src={product.images[0]}
         alt={product.code}
         className="max-h-[55vh] w-auto max-w-[80%] object-contain"
+        transition={cinematicTransition}
       />
 
-      {/* ── UI Below Image: Code, Price, + / Sizes ── */}
+      {/* ── UI Below Image: Code, Price, + / Sizes ──
+           RULE 3: Texts do NOT fly. They fade-in statically while
+           the image arrives.
+      */}
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0, transition: { duration: 0.08 } }}
         transition={{ ...cinematicTransition, delay: 0.15 }}
         className="mt-8 flex flex-col items-center"

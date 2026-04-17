@@ -63,10 +63,13 @@ export function ProductGrid({
             whileHover={{ scale: 1.02 }}
             transition={{ type: 'tween', duration: 0.3, ease: 'easeOut' }}
           >
-            <img
+            {/* ── CRITICAL: layoutId shared with ProductDetail for FLIP flight ── */}
+            <motion.img
+              layoutId={`product-image-${product.id}`}
               src={product.images[0]}
               alt={product.code}
               className="w-full aspect-square object-contain"
+              transition={cinematicTransition}
             />
             <p
               className="mt-4 text-[11px] tracking-[0.2em] uppercase text-center text-black/70"

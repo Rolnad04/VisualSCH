@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Upload, Check, RefreshCw, Clock, AlertCircle, Search } from 'lucide-react';
+import { Upload, Check, RefreshCw, Clock, AlertCircle, AlertTriangle, Search, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -29,6 +29,8 @@ const debtSchema = z.object({
   studentId: z.string().min(1, "Debe seleccionar un alumno"),
   monto: z.string().min(1, "Ingrese el monto").refine(v => !isNaN(Number(v)) && Number(v) > 0, "Debe ser un número mayor a 0"),
   descripcion: z.string().min(3, "Ingrese una descripción del cobro"),
+  payerNombre: z.string().min(3, "Ingrese el nombre completo del pagador"),
+  payerDni: z.string().length(8, "El DNI debe tener exactamente 8 dígitos").regex(/^\d{8}$/, "Solo se permiten números"),
   metodoPago: z.enum(['Yape', 'Efectivo', 'Transferencia']),
   observaciones: z.string().optional(),
 });
@@ -49,6 +51,8 @@ export default function DeudasPage() {
       studentId: '',
       monto: '',
       descripcion: '',
+      payerNombre: '',
+      payerDni: '',
       metodoPago: 'Efectivo',
       observaciones: '',
     },
@@ -70,12 +74,26 @@ export default function DeudasPage() {
     setPhotoEvidence("https://picsum.photos/seed/debt-voucher/300/500");
   };
 
-  const handleObsBlur = () => {
-    if (watchObservaciones && watchObservaciones.trim()) {
-      const now = new Date();
-      setObsTimestamp(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + now.toLocaleDateString('es-PE'));
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleObsChange = useCallback((value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value || !value.trim()) {
+      setObsTimestamp(null);
+      return;
     }
-  };
+    debounceRef.current = setTimeout(() => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const period = hours >= 12 ? 'p. m.' : 'a. m.';
+      const h12 = hours % 12 || 12;
+      const day = now.getDate().toString().padStart(2, '0');
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const year = now.getFullYear();
+      setObsTimestamp(`${h12}:${minutes} ${period} · ${day}/${month}/${year}`);
+    }, 400);
+  }, []);
 
   const onSubmit = (data: DebtValues) => {
     if ((data.metodoPago === 'Yape' || data.metodoPago === 'Transferencia') && !photoEvidence) {
@@ -88,8 +106,8 @@ export default function DeudasPage() {
     }
 
     toast({
-      title: "Solicitud de cobro enviada",
-      description: `Se ha enviado la solicitud de cobro de S/ ${data.monto} al administrador para su confirmación.`,
+      title: "Pago registrado exitosamente",
+      description: `Se ha registrado el pago de mensualidad de S/ ${data.monto} para su confirmación.`,
     });
     form.reset();
     setPhotoEvidence(null);
@@ -102,9 +120,9 @@ export default function DeudasPage() {
     <div className="container mx-auto py-6 space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent">
-          Cobro de Deudas
+          Cobro de Mensualidad
         </h1>
-        <p className="text-muted-foreground">Registra y envía solicitudes de cobro de deudas al administrador.</p>
+        <p className="text-muted-foreground">Registra y procesa el pago de mensualidades (regulares o atrasadas).</p>
       </div>
 
       {/* Debtors summary */}
@@ -126,6 +144,21 @@ export default function DeudasPage() {
                   onClick={() => {
                     setSelectedStudentId(s.id);
                     form.setValue('studentId', s.id);
+                    if (s.debtAmount !== undefined) {
+                      form.setValue('monto', String(s.debtAmount));
+                    }
+                    if (s.monthsOwed !== undefined && s.monthsOwed > 0) {
+                      form.setValue('descripcion', `Pago de mensualidad atrasada (${s.monthsOwed} mes/es)`);
+                    } else {
+                      form.setValue('descripcion', 'Pago de mensualidad regular');
+                    }
+                    if (s.age >= 18) {
+                      form.setValue('payerNombre', s.name);
+                      form.setValue('payerDni', s.dni);
+                    } else {
+                      form.setValue('payerNombre', '');
+                      form.setValue('payerDni', '');
+                    }
                   }}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-red-200 bg-white hover:bg-red-50 transition-colors text-sm"
                 >
@@ -150,7 +183,7 @@ export default function DeudasPage() {
             <Card className="shadow-lg border-primary/10 md:col-span-2">
               <CardHeader className="bg-primary/5">
                 <CardTitle className="text-lg">Seleccionar Alumno</CardTitle>
-                <CardDescription>Busque y seleccione el alumno para registrar el cobro de deuda.</CardDescription>
+                <CardDescription>Busque y seleccione el alumno para registrar el pago de mensualidad.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
                 <div className="relative">
@@ -178,6 +211,21 @@ export default function DeudasPage() {
                           onClick={() => {
                             setSelectedStudentId(s.id);
                             form.setValue('studentId', s.id);
+                            if (s.debtAmount !== undefined) {
+                              form.setValue('monto', String(s.debtAmount));
+                            }
+                            if (s.monthsOwed !== undefined && s.monthsOwed > 1) {
+                              form.setValue('descripcion', `Pago de mensualidad atrasada (${s.monthsOwed} mes/es)`);
+                            } else {
+                              form.setValue('descripcion', 'Pago de mensualidad regular');
+                            }
+                            if (s.age >= 18) {
+                              form.setValue('payerNombre', s.name);
+                              form.setValue('payerDni', s.dni);
+                            } else {
+                              form.setValue('payerNombre', '');
+                              form.setValue('payerDni', '');
+                            }
                             setSearchQuery('');
                           }}
                         >
@@ -207,9 +255,18 @@ export default function DeudasPage() {
                       <p className="font-semibold">{selectedStudent.name}</p>
                       <p className="text-sm text-muted-foreground">DNI: {selectedStudent.dni} · {selectedStudent.category} · {selectedStudent.season}</p>
                     </div>
-                    <Badge variant={selectedStudent.paymentStatus === 'Deuda pendiente' ? 'destructive' : 'secondary'}>
-                      {selectedStudent.paymentStatus}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <Badge variant={selectedStudent.paymentStatus === 'Deuda pendiente' ? 'destructive' : 'secondary'}>
+                        {selectedStudent.paymentStatus}
+                      </Badge>
+                      {selectedStudent.paymentStatus === 'Deuda pendiente' && (
+                        <Badge variant="outline" className="text-xs animate-in fade-in duration-300">
+                          {selectedStudent.monthsOwed && selectedStudent.monthsOwed > 0
+                            ? `Mensualidades adeudadas: ${selectedStudent.monthsOwed}`
+                            : 'Deuda por accesorios'}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 )}
                 <FormField
@@ -224,7 +281,7 @@ export default function DeudasPage() {
             <Card className="shadow-lg border-primary/10">
               <CardHeader className="bg-primary/5">
                 <CardTitle className="text-lg">Detalle del Cobro</CardTitle>
-                <CardDescription>Información del monto y tipo de deuda.</CardDescription>
+                <CardDescription>Información del monto y tipo de mensualidad.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
                 <FormField
@@ -234,7 +291,14 @@ export default function DeudasPage() {
                     <FormItem>
                       <FormLabel>Monto (S/)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          readOnly
+                          className="bg-muted/50 opacity-75 cursor-not-allowed"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -247,12 +311,58 @@ export default function DeudasPage() {
                     <FormItem>
                       <FormLabel>Descripción del cobro</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: Mensualidad Marzo 2026" {...field} />
+                        <Input
+                          placeholder="Ej: Mensualidad Marzo 2026"
+                          readOnly
+                          className="bg-muted/50 opacity-75 cursor-not-allowed"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* Payer info separator */}
+                <div className="border-t pt-4 mt-2">
+                  {selectedStudent && selectedStudent.age < 18 && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 mb-4 animate-in fade-in duration-300">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-amber-700">
+                        Alumno menor de edad. Ingrese los datos del apoderado o persona responsable del pago.
+                      </p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="payerNombre"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nombres y Apellidos del Pagador</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ej: Mario Perez García" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="payerDni"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>DNI del Pagador</FormLabel>
+                          <FormControl>
+                            <Input placeholder="12345678" maxLength={8} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="metodoPago"
@@ -314,18 +424,25 @@ export default function DeudasPage() {
                         </>
                       )}
                     </div>
-                    {photoEvidence && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 w-full"
-                        onClick={handleEvidenceUpload}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        Cambiar
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 w-full"
+                      onClick={handleEvidenceUpload}
+                    >
+                      {photoEvidence ? (
+                        <>
+                          <RefreshCw className="h-4 w-4" />
+                          Cambiar foto de voucher
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="h-4 w-4" />
+                          Subir foto de voucher
+                        </>
+                      )}
+                    </Button>
                   </div>
                 )}
 
@@ -340,9 +457,9 @@ export default function DeudasPage() {
                           placeholder="Notas adicionales para el administrador..."
                           className="min-h-[80px]"
                           {...field}
-                          onBlur={(e) => {
-                            field.onBlur();
-                            handleObsBlur();
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleObsChange(e.target.value);
                           }}
                         />
                       </FormControl>
@@ -366,7 +483,7 @@ export default function DeudasPage() {
               size="lg"
               className="w-full md:w-auto px-12 bg-gradient-to-r from-red-600 to-orange-500 hover:opacity-90 transition-all font-bold"
             >
-              Enviar solicitud de cobro
+              Enviar solicitud de confirmacion
             </Button>
           </div>
         </form>

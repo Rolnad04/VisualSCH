@@ -28,6 +28,8 @@ export type Student = {
   professorId: string;
   totalPayments: number;
   totalAttendance: number;
+  debtAmount?: number;
+  monthsOwed?: number;
 };
 
 export type Professor = {

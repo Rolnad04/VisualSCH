@@ -183,6 +183,8 @@ export const students: Student[] = [
     professorId: 'prof-1',
     totalPayments: 3,
     totalAttendance: 22,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   {
     id: 'stu-2',
@@ -199,6 +201,8 @@ export const students: Student[] = [
     professorId: 'prof-2',
     totalPayments: 1,
     totalAttendance: 15,
+    debtAmount: 60,
+    monthsOwed: 2,
   },
   {
     id: 'stu-3',
@@ -215,6 +219,8 @@ export const students: Student[] = [
     professorId: 'prof-1',
     totalPayments: 5,
     totalAttendance: 45,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   {
     id: 'stu-4',
@@ -231,6 +237,8 @@ export const students: Student[] = [
     professorId: 'prof-3',
     totalPayments: 2,
     totalAttendance: 18,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   {
     id: 'stu-5',
@@ -247,6 +255,8 @@ export const students: Student[] = [
     professorId: 'prof-2',
     totalPayments: 6,
     totalAttendance: 50,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   // Additional students
   {
@@ -264,6 +274,8 @@ export const students: Student[] = [
     professorId: 'prof-1',
     totalPayments: 4,
     totalAttendance: 30,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   {
     id: 'stu-7',
@@ -280,6 +292,8 @@ export const students: Student[] = [
     professorId: 'prof-3',
     totalPayments: 2,
     totalAttendance: 12,
+    debtAmount: 25,
+    monthsOwed: 1,
   },
   {
     id: 'stu-8',
@@ -296,6 +310,8 @@ export const students: Student[] = [
     professorId: 'prof-3',
     totalPayments: 1,
     totalAttendance: 8,
+    debtAmount: 20,
+    monthsOwed: 1,
   },
   {
     id: 'stu-9',
@@ -312,6 +328,8 @@ export const students: Student[] = [
     professorId: 'prof-1',
     totalPayments: 2,
     totalAttendance: 20,
+    debtAmount: 90,
+    monthsOwed: 3,
   },
   {
     id: 'stu-10',
@@ -328,6 +346,8 @@ export const students: Student[] = [
     professorId: 'prof-2',
     totalPayments: 3,
     totalAttendance: 25,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   {
     id: 'stu-11',
@@ -344,6 +364,8 @@ export const students: Student[] = [
     professorId: 'prof-3',
     totalPayments: 5,
     totalAttendance: 40,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   {
     id: 'stu-12',
@@ -360,6 +382,8 @@ export const students: Student[] = [
     professorId: 'prof-1',
     totalPayments: 7,
     totalAttendance: 55,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   {
     id: 'stu-13',
@@ -376,6 +400,8 @@ export const students: Student[] = [
     professorId: 'prof-2',
     totalPayments: 3,
     totalAttendance: 28,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
   {
     id: 'stu-14',
@@ -392,6 +418,8 @@ export const students: Student[] = [
     professorId: 'prof-3',
     totalPayments: 1,
     totalAttendance: 10,
+    debtAmount: 25,
+    monthsOwed: 0,
   },
   {
     id: 'stu-15',
@@ -408,6 +436,26 @@ export const students: Student[] = [
     professorId: 'prof-1',
     totalPayments: 6,
     totalAttendance: 48,
+    debtAmount: 30,
+    monthsOwed: 1,
+  },
+  {
+    id: 'stu-16',
+    name: 'Fernando Quispe Rojas',
+    dni: '10987654',
+    photoUrl: 'https://picsum.photos/seed/stu16/100/100',
+    age: 20,
+    gender: 'Masculino',
+    phone: '995678901',
+    sport: 'Fútbol',
+    category: 'Sub 17',
+    season: 'Anual 2026',
+    paymentStatus: 'Deuda pendiente',
+    professorId: 'prof-1',
+    totalPayments: 2,
+    totalAttendance: 16,
+    debtAmount: 30,
+    monthsOwed: 1,
   },
 ];
 
@@ -523,11 +571,11 @@ export const requests: ConfirmationRequest[] = [
     },
     rejectionTimestamp: addHours(subDays(now, 3), 8).toISOString(),
     observation: {
-        notes: 'La transferencia fue realizada a una cuenta incorrecta y el plazo para la corrección ha expirado. La solicitud ha sido rechazada.',
-        timestamp: addHours(subDays(now, 3), 8).toISOString(),
+      notes: 'La transferencia fue realizada a una cuenta incorrecta y el plazo para la corrección ha expirado. La solicitud ha sido rechazada.',
+      timestamp: addHours(subDays(now, 3), 8).toISOString(),
     }
   },
-   {
+  {
     id: 'req-5',
     timestamp: subHours(now, 1).toISOString(),
     motive: 'Pack 1',

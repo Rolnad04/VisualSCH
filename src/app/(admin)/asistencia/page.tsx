@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,14 @@ import type { Attendance } from '@/lib/types';
 
 export default function AsistenciaPage() {
   const { toast } = useToast();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+  }, []);
+
+  const isAdmin = userRole === 'Administrador';
   const [filters, setFilters] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
     category: 'all',
@@ -124,7 +132,7 @@ export default function AsistenciaPage() {
                   className="w-full md:w-[180px]"
               />
           </div>
-          {newlyMarked.size > 0 && (
+          {!isAdmin && newlyMarked.size > 0 && (
             <Button 
               onClick={handleSaveAttendance}
               className="mt-5 gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:opacity-90 animate-in fade-in duration-300"
@@ -228,8 +236,8 @@ export default function AsistenciaPage() {
         </Card>
       </div>
 
-      {/* Alumnos sin marcar asistencia */}
-      {studentsWithoutAttendance.length > 0 && (
+      {/* Alumnos sin marcar asistencia — solo visible para Promotora */}
+      {!isAdmin && studentsWithoutAttendance.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-amber-500" />

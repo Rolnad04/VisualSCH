@@ -27,7 +27,7 @@ export default function AlumnosFilterBar({ filters, setFilters, onClear }: Alumn
               onChange={(e) => handleFilterChange('search', e.target.value)}
           />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
           <SelectTrigger><SelectValue placeholder="Categoría" /></SelectTrigger>
           <SelectContent>
@@ -89,6 +89,14 @@ export default function AlumnosFilterBar({ filters, setFilters, onClear }: Alumn
                 />
             )}
         </div>
+        <Select value={filters.isActive || 'all'} onValueChange={(value) => handleFilterChange('isActive', value)}>
+          <SelectTrigger><SelectValue placeholder="Estado de Actividad" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="active">Solo Activos</SelectItem>
+            <SelectItem value="inactive">Solo Inactivos</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
        <Button variant="ghost" onClick={onClear} className="text-muted-foreground w-full sm:w-auto">
             <FilterX className="mr-2 h-4 w-4" />

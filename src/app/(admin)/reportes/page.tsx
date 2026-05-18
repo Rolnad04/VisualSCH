@@ -1,10 +1,34 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Download, FileSearch, AlertTriangle } from 'lucide-react';
+import { students as allStudents } from '@/lib/data';
+import { categories } from '@/lib/data';
+import { ReportsService, type ReportParams } from '@/lib/reports-service';
+
+const meses = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
 
 export default function ReportesPage() {
+    const [reportParams, setReportParams] = useState<ReportParams>({
+        category: 'all',
+        month: 'all',
+    });
+
+    // Ejecuta el "Stored Procedure" parametrizado cada vez que cambian los filtros
+    const morososReport = useMemo(() => {
+        return ReportsService.getMorososReport(allStudents, reportParams);
+    }, [reportParams]);
+
+    const handleParamChange = (key: keyof ReportParams, value: string) => {
+        setReportParams(prev => ({ ...prev, [key]: value }));
+    };
 
     return (
         <div className="space-y-6">
@@ -55,6 +79,106 @@ export default function ReportesPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* ── Reporte de Morosidad (Stored Procedure Parametrizado) ──────── */}
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-destructive" />
+                                Reporte de Morosidad
+                            </CardTitle>
+                            <CardDescription>
+                                Consulta parametrizada — Emulación de Stored Procedure <code className="text-xs bg-muted px-1 py-0.5 rounded">[dbo].[GetAlumnosMorososReport]</code>
+                            </CardDescription>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                            {morososReport.length} resultado{morososReport.length !== 1 ? 's' : ''}
+                        </Badge>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {/* Filtros parametrizados */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">@Category</label>
+                            <Select value={reportParams.category} onValueChange={(v) => handleParamChange('category', v)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Categoría" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas las categorías</SelectItem>
+                                    {categories.map(c => (
+                                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">@Month</label>
+                            <Select value={reportParams.month} onValueChange={(v) => handleParamChange('month', v)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Mes" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos los meses</SelectItem>
+                                    {meses.map(m => (
+                                        <SelectItem key={m} value={m} className="capitalize">{m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex items-end">
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => setReportParams({ category: 'all', month: 'all' })}
+                            >
+                                Limpiar Parámetros
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Tabla de resultados */}
+                    {morososReport.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nombre</TableHead>
+                                    <TableHead>DNI</TableHead>
+                                    <TableHead>Categoría</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                    <TableHead className="text-right">Deuda</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {morososReport.map(student => (
+                                    <TableRow key={student.id}>
+                                        <TableCell className="font-medium">{student.name}</TableCell>
+                                        <TableCell>{student.dni}</TableCell>
+                                        <TableCell>{student.category}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={student.paymentStatus === 'Deuda pendiente' ? 'destructive' : 'default'}
+                                                className={student.paymentStatus === 'Próximo a vencer' ? 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30' : ''}>
+                                                {student.paymentStatus}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right font-semibold">
+                                            S/ {(student.debtAmount || 0).toFixed(2)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <FileSearch className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                            <p>No se encontraron alumnos morosos con los parámetros seleccionados.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
             
              <Card className="col-span-full">
                 <CardHeader>

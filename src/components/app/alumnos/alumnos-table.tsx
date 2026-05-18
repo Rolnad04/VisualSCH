@@ -48,7 +48,12 @@ export default function AlumnosTable({ students, onViewStudent }: AlumnosTablePr
                     <AvatarFallback>{student.name.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                 </TableCell>
-                <TableCell className="font-medium">{student.name}</TableCell>
+                <TableCell className={cn("font-medium", student.isActive === false && "text-muted-foreground")}>
+                  {student.name}
+                  {student.isActive === false && (
+                    <Badge variant="destructive" className="ml-2 text-[10px] h-4">INACTIVO</Badge>
+                  )}
+                </TableCell>
                 <TableCell>{student.dni}</TableCell>
                 <TableCell className="hidden md:table-cell">{student.category}</TableCell>
                 <TableCell className="hidden md:table-cell">{student.season}</TableCell>

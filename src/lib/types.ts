@@ -30,6 +30,8 @@ export type Student = {
   totalAttendance: number;
   debtAmount?: number;
   monthsOwed?: number;
+  dueDate?: string;
+  isActive?: boolean;
 };
 
 export type Professor = {

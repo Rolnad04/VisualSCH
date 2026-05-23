@@ -13,10 +13,11 @@ type AlumnosTableProps = {
   onViewStudent: (student: Student) => void;
 };
 
-const statusVariant = {
-    'Al día': 'bg-green-500/20 text-green-700 border-green-500/30',
-    'Deuda pendiente': 'bg-red-500/20 text-red-700 border-red-500/30',
-    'Próximo a vencer': 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30'
+const statusVariant: Record<string, string> = {
+  'Al día': 'bg-green-500/20 text-green-700 border-green-500/30',
+  'Deuda pendiente': 'bg-orange-500/20 text-orange-700 border-orange-500/30', // Tolerancia
+  'Próximo a vencer': 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
+  'Inactivo': 'bg-red-500/20 text-red-700 border-red-500/30'
 }
 
 export default function AlumnosTable({ students, onViewStudent }: AlumnosTableProps) {
@@ -72,10 +73,10 @@ export default function AlumnosTable({ students, onViewStudent }: AlumnosTablePr
             ))}
           </TableBody>
         </Table>
-         {students.length === 0 && (
-            <div className="text-center p-10 text-muted-foreground">
-                No se encontraron alumnos con los filtros aplicados.
-            </div>
+        {students.length === 0 && (
+          <div className="text-center p-10 text-muted-foreground">
+            No se encontraron alumnos con los filtros aplicados.
+          </div>
         )}
       </CardContent>
     </Card>

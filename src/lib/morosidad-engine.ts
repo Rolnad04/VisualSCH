@@ -1,72 +1,50 @@
 import { Student } from './types';
 
 export const MorosidadEngine = {
-  /**
-   * Emulación de Hilo Secundario (Web API / Event Loop).
-   * Procesa las deudas de forma asíncrona sin bloquear la UI.
-   * Aplica la regla de los 14 días de tolerancia.
-   */
   procesarDeudasAsync: async (estudiantes: Student[]): Promise<Student[]> => {
-    // Emulamos el envío de la tarea a un hilo secundario (Web API / Event Loop)
     return new Promise((resolve) => {
       setTimeout(() => {
-        const fechaActual = new Date();
+        // Auditoría anclada al 06/05/2026
+        const fechaActual = new Date('2026-05-06T12:00:00');
+        fechaActual.setHours(0, 0, 0, 0);
 
-        // Emulación de LINQ: .Select() -> .map()
-        const alumnosActualizados = estudiantes.map(estudiante => {
-          if (!estudiante.dueDate) return estudiante;
+        const alumnosActualizados: Student[] = estudiantes.map((estudiante): Student => {
+          const resultado: Student = { ...estudiante };
 
-          const fechaVencimiento = new Date(estudiante.dueDate);
-          const diferenciaMilisegundos = fechaActual.getTime() - fechaVencimiento.getTime();
-          const diasRetraso = Math.floor(diferenciaMilisegundos / (1000 * 60 * 60 * 24));
-
-          // Regla de los 14 días
-          if (diasRetraso > 14) {
-            return {
-              ...estudiante,
-              paymentStatus: 'Deuda pendiente' as const,
-              isActive: false,
-            };
-          } else if (diasRetraso > 0 && diasRetraso <= 14) {
-            return {
-              ...estudiante,
-              paymentStatus: 'Próximo a vencer' as const,
-            };
+          if (!resultado.dueDate) {
+            const esRealmenteMoroso = (resultado.monthsOwed || 0) > 0;
+            resultado.paymentStatus = esRealmenteMoroso ? 'Inactivo' : 'Al día';
+            resultado.isActive = !esRealmenteMoroso;
+            return resultado;
           }
 
-          return estudiante;
+          // SOLUCIÓN: Leer la fecha directamente sin destrozarla
+          // Si dueDate es '2026-06-05', esto crea la fecha perfecta
+          const fechaVencimiento = new Date(`${resultado.dueDate}T00:00:00`);
+          fechaVencimiento.setHours(0, 0, 0, 0);
+
+          const diasRetraso = Math.floor((fechaActual.getTime() - fechaVencimiento.getTime()) / (1000 * 60 * 60 * 24));
+
+          // Asignación de estado según jerarquía
+          if (diasRetraso > 14) {
+            resultado.paymentStatus = 'Inactivo';
+            resultado.isActive = false;
+          } else if (diasRetraso > 0 && diasRetraso <= 14) {
+            resultado.paymentStatus = 'Deuda pendiente';
+            resultado.isActive = true;
+          } else if (diasRetraso > -5 && diasRetraso <= 0) {
+            resultado.paymentStatus = 'Próximo a vencer';
+            resultado.isActive = true;
+          } else {
+            resultado.paymentStatus = 'Al día';
+            resultado.isActive = true;
+          }
+
+          return resultado;
         });
 
-        // Emulación de LINQ: .Aggregate() -> .reduce()
-        const totalMorosos = alumnosActualizados.reduce((acc, est) =>
-          est.paymentStatus === 'Deuda pendiente' ? acc + 1 : acc
-        , 0);
-
-        const totalProximosAVencer = alumnosActualizados.reduce((acc, est) =>
-          est.paymentStatus === 'Próximo a vencer' ? acc + 1 : acc
-        , 0);
-
-        console.log(`[Motor] Hilo finalizado. Morosos: ${totalMorosos}, Próximos a vencer: ${totalProximosAVencer}`);
         resolve(alumnosActualizados);
-      }, 2500); // Simulamos 2.5 segundos de cálculo pesado
+      }, 50);
     });
-  },
-
-  /**
-   * Emulación de LINQ .Where() -> .filter()
-   * Filtra solo los estudiantes con deuda pendiente.
-   */
-  obtenerMorosos: (estudiantes: Student[]): Student[] => {
-    return estudiantes.filter(est => est.paymentStatus === 'Deuda pendiente');
-  },
-
-  /**
-   * Emulación de LINQ .Aggregate() -> .reduce()
-   * Calcula el monto total adeudado por todos los morosos.
-   */
-  calcularDeudaTotal: (estudiantes: Student[]): number => {
-    return estudiantes
-      .filter(est => est.paymentStatus === 'Deuda pendiente')
-      .reduce((total, est) => total + (est.debtAmount || 0), 0);
   },
 };

@@ -12,6 +12,15 @@ export type Guardian = {
   phone: string;
 };
 
+export type Purchase = {
+  id: string;
+  date: string;
+  productName: string;
+  amount: number;
+};
+
+export type PaymentStatus = 'Al día' | 'Deuda pendiente' | 'Próximo a vencer' | 'Inactivo';
+
 export type Student = {
   id: string;
   name: string;
@@ -24,7 +33,7 @@ export type Student = {
   sport: string;
   category: string;
   season: string;
-  paymentStatus: 'Al día' | 'Deuda pendiente' | 'Próximo a vencer';
+  paymentStatus: PaymentStatus;
   professorId: string;
   totalPayments: number;
   totalAttendance: number;
@@ -32,6 +41,7 @@ export type Student = {
   monthsOwed?: number;
   dueDate?: string;
   isActive?: boolean;
+  purchases?: Purchase[]
 };
 
 export type Professor = {

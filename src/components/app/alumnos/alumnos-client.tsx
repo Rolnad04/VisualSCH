@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Student } from '@/lib/types';
 import AlumnosFilterBar from './alumnos-filter-bar';
 import AlumnosTable from './alumnos-table';
@@ -47,15 +47,15 @@ export default function AlumnosClient({ initialStudents }: AlumnosClientProps) {
       if (filters.isActive === 'active' && student.isActive === false) return false;
       if (filters.isActive === 'inactive' && student.isActive !== false) return false;
 
-      if(filters.age && filters.ageOperator !== 'all') {
+      if (filters.age && filters.ageOperator !== 'all') {
         const age = parseInt(filters.age, 10);
-        if(!isNaN(age)) {
+        if (!isNaN(age)) {
           if (filters.ageOperator === 'eq' && student.age !== age) return false;
           if (filters.ageOperator === 'lt' && student.age >= age) return false;
           if (filters.ageOperator === 'gt' && student.age <= age) return false;
           if (filters.ageOperator === 'btw') {
             const ageEnd = parseInt(filters.ageEnd, 10);
-            if(!isNaN(ageEnd) && (student.age < age || student.age > ageEnd)) return false;
+            if (!isNaN(ageEnd) && (student.age < age || student.age > ageEnd)) return false;
           }
         }
       }
@@ -105,18 +105,18 @@ export default function AlumnosClient({ initialStudents }: AlumnosClientProps) {
       prev && prev.id === id ? { ...prev, ...updatedData } : prev
     );
   };
-  
+
   const handleClearFilters = () => {
     setFilters({
-        search: '',
-        category: 'all',
-        paymentStatus: 'all',
-        season: 'all',
-        sport: 'all',
-        ageOperator: 'all',
-        age: '',
-        ageEnd: '',
-        isActive: 'all',
+      search: '',
+      category: 'all',
+      paymentStatus: 'all',
+      season: 'all',
+      sport: 'all',
+      ageOperator: 'all',
+      age: '',
+      ageEnd: '',
+      isActive: 'all',
     });
   }
 
@@ -139,51 +139,66 @@ export default function AlumnosClient({ initialStudents }: AlumnosClientProps) {
     });
   };
 
+  // ── Referencia para evitar Stale Closures (Datos desactualizados en el Timer) ──
+  const studentsRef = useRef(students);
+  useEffect(() => {
+    studentsRef.current = students;
+  }, [students]);
+
   // ── Control Timer (Emulación de Timer de .NET) ─────────────────────────
   useEffect(() => {
-    console.log("⏱️ [Control Timer Activo]: Configurando verificación automática de morosidad cada 60 segundos...");
+    let isMounted = true;
+    console.log("⏱️ [Control Timer Activo]: Configurando verificación automática...");
 
-    const autoTimer = setInterval(async () => {
-      console.log("🔄 [Timer Trigger]: Iniciando barrido automático diario de cuentas morosas en segundo plano...");
+    const ejecutarMotorAutomatico = async () => {
+      console.log("🔄 [Timer Trigger]: Iniciando barrido automático...");
+      // Se usa la referencia para leer siempre la lista más reciente sin reiniciar el timer
+      const resultado = await MorosidadEngine.procesarDeudasAsync(studentsRef.current);
 
-      // Ejecuta el cálculo asíncrono de manera silenciosa
-      const resultado = await MorosidadEngine.procesarDeudasAsync(students);
-      setStudents(resultado);
-
-      console.log("✅ [Timer Completado]: El motor automático actualizó las deudas pendientes de forma exitosa.");
-    }, 60000); // 60 segundos para fines de prueba (en producción sería cada 24 horas)
-
-    // Cleanup: Destruye el timer si el usuario sale del módulo
-    return () => {
-      console.log("🛑 [Control Timer Desactivado]: Limpiando temporizador de memoria.");
-      clearInterval(autoTimer);
+      if (isMounted) {
+        setStudents(resultado);
+        console.log("✅ [Timer Completado]: Motor automático actualizado.");
+      }
     };
-  }, [students]);
+
+    // 1. EJECUCIÓN INMEDIATA: Corre el motor apenas abres la pestaña
+    ejecutarMotorAutomatico();
+
+    // 2. TIMER EN SEGUNDO PLANO: Queda programado cada 60 segundos
+    const autoTimer = setInterval(ejecutarMotorAutomatico, 60000);
+
+    // Cleanup al salir del módulo
+    return () => {
+      isMounted = false;
+      clearInterval(autoTimer);
+      console.log("🛑 [Control Timer Desactivado]: Limpiando temporizador.");
+    };
+  }, []); // <-- ARRAY VACÍO: El timer se configura una sola vez y no se resetea a cada rato
 
   return (
     <>
       <div className="space-y-6">
         <div className="flex items-start justify-between">
-            <div>
-                <h1 className="text-2xl font-bold font-headline">Alumnos</h1>
-                <p className="text-muted-foreground">Consulta la información de todos los alumnos.</p>
-            </div>
-            <div className="flex gap-2">
-                <Button
-                  variant="default"
-                  onClick={ejecutarBarridoMorosidad}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Zap className="mr-2 h-4 w-4" />
-                  )}
-                  {isProcessing ? 'Procesando...' : 'Motor de Morosidad'}
-                </Button>
-                <Button variant="outline" onClick={() => setAnunciosOpen(true)}>Anuncios</Button>
-                <Button variant="outline" onClick={() => setNotificacionesOpen(true)}>Notificaciones de Deuda</Button>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold font-headline">Alumnos</h1>
+            <p className="text-muted-foreground">Consulta la información de todos los alumnos.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              onClick={ejecutarBarridoMorosidad}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Zap className="mr-2 h-4 w-4" />
+              )}
+              {isProcessing ? 'Procesando...' : 'Motor de Morosidad'}
+            </Button>
+            <Button variant="outline" onClick={() => setAnunciosOpen(true)}>Anuncios</Button>
+            <Button variant="outline" onClick={() => setNotificacionesOpen(true)}>Notificaciones de Deuda</Button>
+          </div>
         </div>
         <AlumnosFilterBar filters={filters} setFilters={setFilters} onClear={handleClearFilters} />
         <AlumnosTable

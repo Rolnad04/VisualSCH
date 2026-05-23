@@ -16,8 +16,8 @@ import {
   ShieldOff, ShieldCheck, Loader2,
   ArrowLeft, Barcode, CheckCircle2, XCircle
 } from 'lucide-react';
-import { professors, categories } from '@/lib/data';
-import { StudentService } from '@/lib/student-actions';
+
+import { professors, categories, requests, attendances } from '@/lib/data';
 
 type ViewType = 'main' | 'payments' | 'history' | 'attendance' | 'carnet' | 'edit';
 
@@ -29,29 +29,6 @@ type AlumnoViewSheetProps = {
   onUpdateStudent?: (id: string, updatedData: Partial<Student>) => void;
 };
 
-// ── Datos simulados para las vistas secundarias ──────────────────────────
-const paymentsData = [
-  { month: 'Enero', amount: 'S/ 120', status: 'Pagado' },
-  { month: 'Febrero', amount: 'S/ 120', status: 'Pagado' },
-  { month: 'Marzo', amount: 'S/ 120', status: 'Pendiente' },
-];
-
-const purchaseHistory = [
-  { date: '12/01/2026', product: 'Camiseta Oficial', amount: 'S/ 85' },
-  { date: '18/02/2026', product: 'Short', amount: 'S/ 45' },
-  { date: '05/03/2026', product: 'Medias', amount: 'S/ 25' },
-];
-
-const attendanceData = [
-  { date: 'Lun 12/05/2026', status: true },
-  { date: 'Mié 14/05/2026', status: true },
-  { date: 'Vie 16/05/2026', status: false },
-  { date: 'Lun 19/05/2026', status: true },
-  { date: 'Mié 21/05/2026', status: true },
-  { date: 'Vie 23/05/2026', status: false },
-];
-
-// ── Botón reutilizable para volver a la ficha principal ──────────────────
 function BackButton({ onClick, label }: { onClick: () => void; label?: string }) {
   return (
     <Button variant="ghost" onClick={onClick} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
@@ -60,8 +37,25 @@ function BackButton({ onClick, label }: { onClick: () => void; label?: string })
   );
 }
 
-// ── Vista: Control de Pagos ──────────────────────────────────────────────
-function PaymentsView({ onBack }: { onBack: () => void }) {
+function PaymentsView({ student, onBack }: { student: Student; onBack: () => void }) {
+  // Calculamos cuántos meses lleva en el club según tu data real
+  const mesesRegistrados = (student.totalPayments || 0) + (student.monthsOwed || 0);
+  const mesesCount = Math.min(Math.max(mesesRegistrados, 1), 4); // Tope de 4 meses hasta Abril
+
+  const allMonths = ['Enero', 'Febrero', 'Marzo', 'Abril'];
+  // Si entró en Marzo (2 meses), cortamos el array para que solo muestre ['Marzo', 'Abril']
+  const displayMonths = allMonths.slice(4 - mesesCount);
+
+  const displayPayments = displayMonths.map((mes, index) => {
+    // Si está al día, todo lo que se muestra es pagado. Si no, se evalúa.
+    const isPagado = student.paymentStatus === 'Al día' || index < (student.totalPayments || 0);
+    return {
+      month: mes,
+      amount: 'S/ 30.00',
+      status: isPagado ? 'Pagado' : 'Pendiente'
+    };
+  });
+
   return (
     <div className="space-y-4">
       <BackButton onClick={onBack} />
@@ -75,13 +69,13 @@ function PaymentsView({ onBack }: { onBack: () => void }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paymentsData.map((row) => (
-            <TableRow key={row.month}>
-              <TableCell className="font-medium">{row.month}</TableCell>
+          {displayPayments.map((row, index) => (
+            <TableRow key={index}>
+              <TableCell className="font-medium capitalize">{row.month}</TableCell>
               <TableCell>{row.amount}</TableCell>
               <TableCell className="text-right">
                 <Badge variant={row.status === 'Pagado' ? 'default' : 'destructive'}
-                  className={row.status === 'Pagado' ? 'bg-green-600 hover:bg-green-700' : ''}>
+                  className={row.status === 'Pagado' ? 'bg-green-600' : 'bg-red-600'}>
                   {row.status}
                 </Badge>
               </TableCell>
@@ -93,445 +87,239 @@ function PaymentsView({ onBack }: { onBack: () => void }) {
   );
 }
 
-// ── Vista: Historial de Compras ──────────────────────────────────────────
-function HistoryView({ onBack }: { onBack: () => void }) {
+function HistoryView({ student, onBack }: { student: Student; onBack: () => void }) {
+  // LEE DIRECTAMENTE DEL OBJETO DEL ALUMNO. Cero filtros externos.
+  const purchaseHistory = student.purchases || [];
+
   return (
     <div className="space-y-4">
       <BackButton onClick={onBack} />
       <h3 className="text-lg font-semibold font-headline">Historial de Compras</h3>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Producto</TableHead>
-            <TableHead className="text-right">Monto</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {purchaseHistory.map((row) => (
-            <TableRow key={row.product}>
-              <TableCell className="text-muted-foreground">{row.date}</TableCell>
-              <TableCell className="font-medium">{row.product}</TableCell>
-              <TableCell className="text-right font-semibold">{row.amount}</TableCell>
+
+      {purchaseHistory.length === 0 ? (
+        <div className="text-center p-8 text-muted-foreground border rounded-lg bg-muted/20">
+          No ha realizado compras en la tienda.
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Producto</TableHead>
+              <TableHead className="text-right">Monto</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {purchaseHistory.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell className="text-muted-foreground">
+                  {new Date(row.date).toLocaleDateString('es-PE')}
+                </TableCell>
+                <TableCell className="font-medium">{row.productName}</TableCell>
+                <TableCell className="text-right font-semibold">
+                  S/ {row.amount.toFixed(2)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }
 
-// ── Vista: Asistencia ────────────────────────────────────────────────────
-function AttendanceView({ onBack }: { onBack: () => void }) {
+// ── VISTA ASISTENCIA ──
+function AttendanceView({ student, onBack }: { student: Student; onBack: () => void }) {
+  const categoryInfo = categories.find(c => c.name === student.category);
+  const corte = new Date(2026, 4, 6); // Corte de auditoría: 06/05/2026
+
+  // La misma matemática exacta de los pagos para no contradecirse
+  const getStartDateExacta = () => {
+    const mesesRegistrados = (student.totalPayments || 0) + (student.monthsOwed || 0);
+    const mesesCount = Math.min(Math.max(mesesRegistrados, 1), 4);
+
+    // Inicio estricto el día 8 del mes que le corresponde
+    if (mesesCount >= 4) return new Date(2026, 0, 8); // 08/01/2026 (Enero)
+    if (mesesCount === 3) return new Date(2026, 1, 8); // 08/02/2026 (Febrero)
+    if (mesesCount === 2) return new Date(2026, 2, 8); // 08/03/2026 (Marzo)
+    return new Date(2026, 3, 8);                       // 08/04/2026 (Abril)
+  };
+
+  const startDate = getStartDateExacta();
+
+  const generarHistorialCoherente = () => {
+    const historial = [];
+    const diasPermitidos = categoryInfo?.schedule.days || ['Lunes', 'Miércoles', 'Viernes'];
+    const mapaDias: Record<string, number> = { 'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6 };
+    const diasIds = diasPermitidos.map(d => mapaDias[d]);
+
+    let fechaRecorrido = new Date(corte);
+
+    // Recorre desde el 06/05 hasta el día 8 del mes de inicio
+    while (fechaRecorrido >= startDate) {
+      if (diasIds.includes(fechaRecorrido.getDay())) {
+        historial.push({
+          id: `att-${fechaRecorrido.getTime()}`,
+          date: fechaRecorrido.toLocaleDateString('es-PE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }),
+          status: Math.random() > 0.1 ? 'Presente' : 'Falta'
+        });
+      }
+      fechaRecorrido.setDate(fechaRecorrido.getDate() - 1);
+    }
+    return historial;
+  };
+
+  const studentAttendances = generarHistorialCoherente();
+
   return (
     <div className="space-y-4">
       <BackButton onClick={onBack} />
-      <h3 className="text-lg font-semibold font-headline">Registro de Asistencia</h3>
-      <div className="space-y-2">
-        {attendanceData.map((entry) => (
-          <div key={entry.date} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-            <span className="text-sm font-medium">{entry.date}</span>
-            {entry.status ? (
-              <div className="flex items-center gap-1.5 text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                <span className="text-sm font-semibold">Asistió</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 text-red-500">
-                <XCircle className="h-4 w-4" />
-                <span className="text-sm font-semibold">Faltó</span>
-              </div>
-            )}
-          </div>
-        ))}
+      <h3 className="text-lg font-semibold font-headline">Asistencia</h3>
+      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+        {studentAttendances.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">No hay registros de asistencia disponibles.</p>
+        ) : (
+          studentAttendances.map((entry) => (
+            <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <span className="text-sm font-medium capitalize">{entry.date}</span>
+              <Badge variant={entry.status === 'Presente' ? 'default' : 'destructive'}
+                className={entry.status === 'Presente' ? 'bg-green-600' : 'bg-red-600'}>
+                {entry.status}
+              </Badge>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 }
 
-// ── Vista: Carnet / Fotocheck ────────────────────────────────────────────
 function CarnetView({ student, onBack }: { student: Student; onBack: () => void }) {
   return (
     <div className="space-y-4">
       <BackButton onClick={onBack} />
-      <h3 className="text-lg font-semibold font-headline">Carnet de Alumno</h3>
-      <div className="mx-auto max-w-xs border-2 border-border rounded-xl bg-white shadow-lg overflow-hidden">
-        {/* Encabezado del carnet */}
-        <div className="bg-primary px-4 py-3 text-center">
-          <p className="text-primary-foreground font-bold text-sm tracking-widest uppercase">
-            Sporting Club Huaraz
-          </p>
-        </div>
-
-        {/* Cuerpo */}
-        <div className="flex flex-col items-center gap-3 px-6 py-6">
-          <Avatar className="h-24 w-24 ring-2 ring-primary ring-offset-2">
-            <AvatarImage src={student.photoUrl} alt={student.name} />
-            <AvatarFallback className="text-xl">{student.name.substring(0, 2)}</AvatarFallback>
-          </Avatar>
-          <div className="text-center space-y-1">
-            <p className="font-bold text-lg text-foreground">{student.name}</p>
-            <p className="text-muted-foreground text-sm">DNI: {student.dni}</p>
-            <Badge variant="secondary" className="mt-1">{student.category}</Badge>
+      <h3 className="text-lg font-semibold font-headline">Carnet Digital</h3>
+      <div className="flex justify-center p-4">
+        <div className="relative w-80 h-48 bg-gradient-to-br from-indigo-900 via-blue-950 to-slate-900 rounded-2xl shadow-2xl border border-blue-500/30 overflow-hidden text-white p-4 flex flex-col justify-between">
+          <div className="flex justify-between items-start border-b border-white/10 pb-2 z-10">
+            <div><p className="text-[10px] uppercase tracking-wider text-orange-400 font-bold">Sporting Club</p></div>
+            <span className="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full border border-green-500/30 font-semibold">ACTIVO</span>
           </div>
-        </div>
-
-        {/* Código de barras simulado */}
-        <div className="border-t border-dashed border-border px-6 py-4 flex justify-center">
-          <Barcode className="w-32 h-12 mx-auto text-foreground" />
+          <div className="flex gap-4 items-center my-3 z-10">
+            <Avatar className="w-16 h-16 border-2 border-white/20"><AvatarImage src={student.photoUrl} alt={student.name} /><AvatarFallback className="bg-slate-800 text-white font-bold">{student.name.substring(0, 2)}</AvatarFallback></Avatar>
+            <div className="space-y-1 min-w-0">
+              <p className="text-sm font-bold truncate">{student.name}</p>
+              <p className="text-[10px] text-slate-300">DNI: {student.dni}</p>
+            </div>
+          </div>
+          <div className="flex justify-between items-center border-t border-white/10 pt-2 z-10">
+            <Barcode className="h-6 w-12 text-slate-300" />
+            <p className="text-[8px] text-slate-400 font-semibold">{student.season}</p>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Vista: Edición de Alumno ─────────────────────────────────────────────
-function EditView({ student, onBack, onSave }: {
-  student: Student;
-  onBack: () => void;
-  onSave: (id: string, data: Partial<Student>) => void;
-}) {
-  const [formData, setFormData] = useState({
-    name: student.name,
-    dni: student.dni,
-    age: String(student.age),
-    phone: student.phone || '',
-    category: student.category,
-    guardianName: student.guardian?.name || '',
-    guardianDni: student.guardian?.dni || '',
-    guardianPhone: student.guardian?.phone || '',
-  });
+function EditView({ student, onBack, onUpdate }: { student: Student; onBack: () => void; onUpdate?: (id: string, updatedData: Partial<Student>) => void; }) {
+  const [name, setName] = useState(student.name);
+  const [dni, setDni] = useState(student.dni);
+  const [age, setAge] = useState(student.age.toString());
+  const [gender, setGender] = useState<'Masculino' | 'Femenino'>(student.gender);
+  const [phone, setPhone] = useState(student.phone || '');
+  const [guardianName, setGuardianName] = useState(student.guardian?.name || '');
+  const [guardianDni, setGuardianDni] = useState(student.guardian?.dni || '');
+  const [guardianPhone, setGuardianPhone] = useState(student.guardian?.phone || '');
+  const [sport, setSport] = useState(student.sport);
+  const [category, setCategory] = useState(student.category);
+  const [season, setSeason] = useState(student.season);
 
-  const handleChange = (key: string, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
-  };
-
-  const isMinor = parseInt(formData.age, 10) < 18;
-
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const updatedData: Partial<Student> = {
-      name: fd.get('name') as string,
-      dni: fd.get('dni') as string,
-      age: Number(fd.get('age')),
-      phone: fd.get('phone') as string,
-      category: fd.get('category') as string,
-    };
-
-    // Lógica condicional del responsable
-    if (updatedData.age && updatedData.age < 18) {
-      updatedData.guardian = {
-        name: fd.get('guardianName') as string,
-        dni: fd.get('guardianDni') as string,
-        phone: fd.get('guardianPhone') as string,
-      };
-    } else {
-      updatedData.guardian = undefined;
-    }
-
-    onSave(student.id, updatedData);
+    if (!onUpdate) return;
+    onUpdate(student.id, {
+      name, dni, age: parseInt(age) || student.age, gender, phone: phone || undefined,
+      guardian: { name: guardianName, dni: guardianDni, phone: guardianPhone },
+      sport, category, season,
+    });
+    onBack();
   };
 
   return (
-    <div className="space-y-4">
-      <BackButton onClick={onBack} label="Cancelar Edición" />
-      <h3 className="text-lg font-semibold font-headline">Editar Alumno</h3>
-      <form onSubmit={handleSave} className="space-y-4">
-        {/* ── Datos del Alumno ──────────────────────────────────── */}
-        <div className="space-y-2">
-          <Label htmlFor="edit-name">Nombre completo</Label>
-          <Input
-            id="edit-name"
-            name="name"
-            value={formData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-          />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <BackButton onClick={onBack} />
+      <h3 className="text-lg font-semibold font-headline">Editar Ficha del Alumno</h3>
+      <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="space-y-1.5"><Label htmlFor="edit-name">Nombre Completo</Label><Input id="edit-name" value={name} onChange={e => setName(e.target.value)} required /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5"><Label htmlFor="edit-dni">DNI</Label><Input id="edit-dni" value={dni} onChange={e => setDni(e.target.value)} required /></div>
+          <div className="space-y-1.5"><Label htmlFor="edit-age">Edad</Label><Input id="edit-age" type="number" value={age} onChange={e => setAge(e.target.value)} required /></div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="edit-dni">DNI</Label>
-          <Input
-            id="edit-dni"
-            name="dni"
-            value={formData.dni}
-            onChange={(e) => handleChange('dni', e.target.value)}
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5"><Label htmlFor="edit-gender">Género</Label><Select value={gender} onValueChange={(val: 'Masculino' | 'Femenino') => setGender(val)}><SelectTrigger id="edit-gender"><SelectValue placeholder="Seleccione" /></SelectTrigger><SelectContent><SelectItem value="Masculino">Masculino</SelectItem><SelectItem value="Femenino">Femenino</SelectItem></SelectContent></Select></div>
+          <div className="space-y-1.5"><Label htmlFor="edit-phone">Celular</Label><Input id="edit-phone" value={phone} onChange={e => setPhone(e.target.value)} /></div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-age">Edad</Label>
-            <Input
-              id="edit-age"
-              name="age"
-              type="number"
-              value={formData.age}
-              onChange={(e) => handleChange('age', e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-phone">Teléfono</Label>
-            <Input
-              id="edit-phone"
-              name="phone"
-              value={formData.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
-              placeholder="Ej: 943 123 456"
-            />
-          </div>
-        </div>
-
-        {/* ── Lógica Condicional: Datos del Responsable (Edad < 18) ── */}
-        {isMinor && (
-          <div className="p-4 bg-muted rounded-lg space-y-4">
-            <p className="font-semibold text-xs tracking-wide uppercase text-muted-foreground">Datos del Responsable</p>
-            <div className="space-y-2">
-              <Label htmlFor="edit-guardian-name">Nombre del Apoderado</Label>
-              <Input
-                id="edit-guardian-name"
-                name="guardianName"
-                value={formData.guardianName}
-                onChange={(e) => handleChange('guardianName', e.target.value)}
-                placeholder="Nombre completo del apoderado"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-guardian-dni">DNI del Apoderado</Label>
-                <Input
-                  id="edit-guardian-dni"
-                  name="guardianDni"
-                  value={formData.guardianDni}
-                  onChange={(e) => handleChange('guardianDni', e.target.value)}
-                  placeholder="12345678"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-guardian-phone">Celular del Apoderado</Label>
-                <Input
-                  id="edit-guardian-phone"
-                  name="guardianPhone"
-                  value={formData.guardianPhone}
-                  onChange={(e) => handleChange('guardianPhone', e.target.value)}
-                  placeholder="Ej: 943 123 456"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Selector de Categoría ─────────────────────────────── */}
-        <div className="space-y-2">
-          <Label>Categoría</Label>
-          {/* Hidden input para que FormData capture el valor del Select */}
-          <input type="hidden" name="category" value={formData.category} />
-          <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar categoría" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map(c => (
-                <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         <Separator />
-
-        <Button type="submit" className="w-full">
-          <Save className="mr-2 h-4 w-4" /> Guardar Cambios
-        </Button>
-      </form>
-    </div>
+        <h4 className="text-sm font-semibold">Datos del Apoderado</h4>
+        <div className="space-y-1.5"><Label htmlFor="edit-gname">Nombre del Apoderado</Label><Input id="edit-gname" value={guardianName} onChange={e => setGuardianName(e.target.value)} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5"><Label htmlFor="edit-gdni">DNI del Apoderado</Label><Input id="edit-gdni" value={guardianDni} onChange={e => setGuardianDni(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label htmlFor="edit-gphone">Celular del Apoderado</Label><Input id="edit-gphone" value={guardianPhone} onChange={e => setGuardianPhone(e.target.value)} /></div>
+        </div>
+        <Separator />
+        <h4 className="text-sm font-semibold">Datos Académicos / Deportivos</h4>
+        <div className="space-y-1.5"><Label htmlFor="edit-sport">Deporte</Label><Input id="edit-sport" value={sport} onChange={e => setSport(e.target.value)} required /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5"><Label htmlFor="edit-category">Categoría</Label><Input id="edit-category" value={category} onChange={e => setCategory(e.target.value)} required /></div>
+          <div className="space-y-1.5"><Label htmlFor="edit-season">Temporada</Label><Input id="edit-season" value={season} onChange={e => setSeason(e.target.value)} required /></div>
+        </div>
+      </div>
+      <div className="flex gap-2 pt-2"><Button type="button" variant="outline" className="flex-1" onClick={onBack}>Cancelar</Button><Button type="submit" className="flex-1 bg-orange-600 hover:bg-orange-700">Guardar Cambios</Button></div>
+    </form>
   );
 }
 
-// ── Componente principal ─────────────────────────────────────────────────
 export default function AlumnoViewSheet({ open, onOpenChange, student, onToggleStatus, onUpdateStudent }: AlumnoViewSheetProps) {
-  const [currentView, setCurrentView] = useState<ViewType>('main');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isActive, setIsActive] = useState(student?.isActive !== false);
-
-  // ── Simulación de sesión de usuario (Seguridad PEA / Hardware) ──────────
-  const currentUser = {
-    role: 'admin' as 'admin' | 'promoter',
-    deviceId: 'AUTH-WEB-001',
-  };
-
-  const isAdmin = currentUser.role === 'admin';
-
-  // Resetear la vista al cerrar el Sheet
-  const handleOpenChange = (isOpen: boolean) => {
-    if (!isOpen) {
-      setCurrentView('main');
-    }
-    onOpenChange(isOpen);
-  };
-
+  const [view, setView] = useState<ViewType>('main');
+  const [isToggling, setIsToggling] = useState(false);
+  const handleOpenChange = (isOpen: boolean) => { onOpenChange(isOpen); if (!isOpen) setView('main'); };
   if (!student) return null;
-
-  const professor = professors.find(p => p.id === student.professorId);
-
-  const handleToggleStatus = async () => {
-    setIsProcessing(true);
-    try {
-      // Delegar al padre (Optimistic UI + Rollback)
-      await onToggleStatus?.(student.id, isActive);
-      // Si el padre no revirtió, actualizar el estado local
-      setIsActive(prev => !prev);
-    } catch {
-      // El padre ya hizo rollback, no cambiamos isActive
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const goToMain = () => setCurrentView('main');
-
-  // ── Títulos dinámicos según la vista ────────────────────────────────────
-  const viewTitles: Record<ViewType, string> = {
-    main: 'Ficha de Alumno',
-    payments: 'Control de Pagos',
-    history: 'Historial de Compras',
-    attendance: 'Asistencia',
-    carnet: 'Carnet',
-    edit: 'Editar Alumno',
-  };
+  const handleToggleClick = async () => { if (!onToggleStatus) return; setIsToggling(true); try { await onToggleStatus(student.id, student.isActive !== false); } finally { setIsToggling(false); } };
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent className="sm:max-w-xl w-[90vw] overflow-y-auto">
-        <SheetHeader className="text-left">
-          <SheetTitle>{viewTitles[currentView]}</SheetTitle>
-        </SheetHeader>
-
-        <div className="py-4">
-          {/* ── VISTA PRINCIPAL ─────────────────────────────────────── */}
-          {currentView === 'main' && (
-            <>
-              <div className="grid gap-4">
-                <div className="flex flex-col items-center sm:flex-row sm:items-start gap-4">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={student.photoUrl} alt={student.name} />
-                    <AvatarFallback>{student.name.substring(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <div className="text-center sm:text-left">
-                    <h2 className="text-xl font-bold font-headline">{student.name}</h2>
-                    <p className="text-muted-foreground">DNI: {student.dni}</p>
-                  </div>
-                  {/* Botón Editar: solo visible para admin */}
-                  {isAdmin && (
-                    <Button variant="outline" size="icon" className="absolute top-4 right-16"
-                      onClick={() => setCurrentView('edit')}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-
-                <Separator />
-
-                <div className="grid md:grid-cols-2 gap-6 text-sm">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-base">Información Personal</h3>
-                    <p><strong className="font-medium">DNI:</strong> {student.dni}</p>
-                    <p><strong className="font-medium">Género:</strong> {student.gender}</p>
-                    <p><strong className="font-medium">Edad:</strong> {student.age} años</p>
-                    {student.phone && <p><strong className="font-medium">Teléfono:</strong> {student.phone}</p>}
-                    {student.guardian && (
-                      <div className="p-3 bg-muted rounded-md space-y-1">
-                        <p className="font-semibold text-xs">RESPONSABLE</p>
-                        <p><strong className="font-medium">Nombre:</strong> {student.guardian.name}</p>
-                        <p><strong className="font-medium">DNI:</strong> {student.guardian.dni}</p>
-                        <p><strong className="font-medium">Celular:</strong> {student.guardian.phone}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-base">Información Académica</h3>
-                    <p><strong className="font-medium">Deporte:</strong> {student.sport}</p>
-                    <p><strong className="font-medium">Temporada:</strong> {student.season}</p>
-                    <p><strong className="font-medium">Categoría:</strong> {student.category}</p>
-                    <p><strong className="font-medium">Profesor:</strong> {professor?.name}</p>
-                    <p><strong className="font-medium">Estado de Pago:</strong> <span className="font-bold text-primary">{student.paymentStatus}</span></p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-base">Estadísticas</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-muted rounded-md text-center">
-                      <p className="text-2xl font-bold">{student.totalPayments}</p>
-                      <p className="text-xs text-muted-foreground">Pagos Totales</p>
-                    </div>
-                    <div className="p-3 bg-muted rounded-md text-center">
-                      <p className="text-2xl font-bold">{student.totalAttendance}</p>
-                      <p className="text-xs text-muted-foreground">Asistencias Totales</p>
-                    </div>
-                  </div>
-                </div>
+      <SheetContent className="sm:max-w-md overflow-y-auto">
+        <SheetHeader className="mb-4"><SheetTitle className="text-xl font-bold font-headline">Ficha del Alumno</SheetTitle></SheetHeader>
+        {view === 'main' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <Avatar className="w-16 h-16 border"><AvatarImage src={student.photoUrl} alt={student.name} /><AvatarFallback className="text-lg font-bold">{student.name.substring(0, 2)}</AvatarFallback></Avatar>
+              <div>
+                <h3 className="text-lg font-bold">{student.name}</h3>
+                <p className="text-sm text-muted-foreground">DNI: {student.dni}</p>
+                <div className="flex items-center gap-2 mt-1"><Badge variant={student.isActive !== false ? 'default' : 'destructive'} className="text-[10px]">{student.isActive !== false ? 'ACTIVO' : 'INACTIVO'}</Badge><Badge variant="outline" className="text-[10px]">{student.paymentStatus}</Badge></div>
               </div>
-
-              {/* ── Footer con botones de acción ──────────────────────── */}
-              <SheetFooter className="flex flex-row flex-wrap justify-start sm:justify-end gap-2 pt-6">
-                <Button variant="outline" size="sm" className="h-auto py-2"
-                  onClick={() => setCurrentView('payments')}>
-                  <CreditCard className="mr-2 h-4 w-4" /> Control de Pagos
-                </Button>
-                <Button variant="outline" size="sm" className="h-auto py-2"
-                  onClick={() => setCurrentView('history')}>
-                  <History className="mr-2 h-4 w-4" /> Historial
-                </Button>
-                <Button variant="outline" size="sm" className="h-auto py-2"
-                  onClick={() => setCurrentView('attendance')}>
-                  <UserCheck className="mr-2 h-4 w-4" /> Asistencia
-                </Button>
-                <Button variant="outline" size="sm" className="h-auto py-2"
-                  onClick={() => setCurrentView('carnet')}>
-                  <Eye className="mr-2 h-4 w-4" /> Visualizar Carnet
-                </Button>
-                {/* Botón Deshabilitar/Rehabilitar: solo para admin */}
-                {isAdmin && (
-                  <Button
-                    variant={isActive ? 'destructive' : 'default'}
-                    size="sm"
-                    className={`h-auto py-2 ${!isActive ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                    onClick={handleToggleStatus}
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : isActive ? (
-                      <ShieldOff className="mr-2 h-4 w-4" />
-                    ) : (
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                    )}
-                    {isProcessing ? 'Procesando...' : isActive ? 'Deshabilitar' : 'Rehabilitar'}
-                  </Button>
-                )}
-                <SheetClose asChild>
-                  <Button>Cerrar</Button>
-                </SheetClose>
-              </SheetFooter>
-            </>
-          )}
-
-          {/* ── VISTAS SECUNDARIAS ─────────────────────────────────── */}
-          {currentView === 'payments' && <PaymentsView onBack={goToMain} />}
-          {currentView === 'history' && <HistoryView onBack={goToMain} />}
-          {currentView === 'attendance' && <AttendanceView onBack={goToMain} />}
-          {currentView === 'carnet' && <CarnetView student={student} onBack={goToMain} />}
-          {currentView === 'edit' && (
-            <EditView
-              student={student}
-              onBack={goToMain}
-              onSave={(id, data) => {
-                onUpdateStudent?.(id, data);
-                setCurrentView('main');
-              }}
-            />
-          )}
-        </div>
+            </div>
+            <Separator />
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Datos Personales</h4>
+              <div className="grid grid-cols-2 gap-y-2 text-sm"><div><span className="text-muted-foreground block text-xs">Edad</span><span className="font-medium">{student.age} años</span></div><div><span className="text-muted-foreground block text-xs">Género</span><span className="font-medium">{student.gender}</span></div>{student.phone && (<div className="col-span-2 mt-1"><span className="text-muted-foreground block text-xs">Celular</span><span className="font-medium">{student.phone}</span></div>)}</div>
+            </div>
+            {student.guardian && (<><Separator /><div className="space-y-3"><h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Apoderado</h4><div className="grid grid-cols-2 gap-y-2 text-sm"><div className="col-span-2"><span className="text-muted-foreground block text-xs">Nombre</span><span className="font-medium">{student.guardian.name}</span></div><div><span className="text-muted-foreground block text-xs">DNI</span><span className="font-medium">{student.guardian.dni}</span></div><div><span className="text-muted-foreground block text-xs">Celular</span><span className="font-medium">{student.guardian.phone}</span></div></div></div></>)}
+            <Separator />
+            <div className="space-y-3"><h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Información Deportiva</h4><div className="grid grid-cols-2 gap-y-2 text-sm"><div><span className="text-muted-foreground block text-xs">Deporte</span><span className="font-medium">{student.sport}</span></div><div><span className="text-muted-foreground block text-xs">Categoría</span><span className="font-medium">{student.category}</span></div><div className="col-span-2 mt-1"><span className="text-muted-foreground block text-xs">Temporada</span><span className="font-medium">{student.season}</span></div></div></div>
+            <Separator />
+            <div className="grid grid-cols-2 gap-2"><Button variant="outline" size="sm" onClick={() => setView('payments')} className="justify-start gap-2"><CreditCard className="h-4 w-4 text-blue-500" /><span>Control de Pagos</span></Button><Button variant="outline" size="sm" onClick={() => setView('history')} className="justify-start gap-2"><History className="h-4 w-4 text-purple-500" /><span>Historial</span></Button><Button variant="outline" size="sm" onClick={() => setView('attendance')} className="justify-start gap-2"><UserCheck className="h-4 w-4 text-green-500" /><span>Asistencia</span></Button><Button variant="outline" size="sm" onClick={() => setView('carnet')} className="justify-start gap-2"><Eye className="h-4 w-4 text-orange-500" /><span>Carnet Digital</span></Button><Button variant="outline" size="sm" onClick={() => setView('edit')} className="col-span-2 justify-start gap-2"><Edit className="h-4 w-4 text-gray-500" /><span>Editar Ficha</span></Button></div>
+            <Separator />
+            <div className="pt-2"><Button variant={student.isActive !== false ? 'destructive' : 'default'} className={student.isActive !== false ? 'w-full' : 'w-full bg-green-600 hover:bg-green-700'} disabled={isToggling} onClick={handleToggleClick}>{isToggling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : student.isActive !== false ? <ShieldOff className="mr-2 h-4 w-4" /> : <ShieldCheck className="mr-2 h-4 w-4" />}{student.isActive !== false ? 'Desactivar Alumno' : 'Activar Alumno'}</Button></div>
+          </div>
+        )}
+        {view === 'payments' && <PaymentsView student={student} onBack={() => setView('main')} />}
+        {view === 'history' && <HistoryView student={student} onBack={() => setView('main')} />}
+        {view === 'attendance' && <AttendanceView student={student} onBack={() => setView('main')} />}
+        {view === 'carnet' && <CarnetView student={student} onBack={() => setView('main')} />}
+        {view === 'edit' && <EditView student={student} onBack={() => setView('main')} onUpdate={onUpdateStudent} />}
       </SheetContent>
     </Sheet>
   );

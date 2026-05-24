@@ -1,3 +1,4 @@
+import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { Student } from './types';
 
 export const MorosidadEngine = {
@@ -5,8 +6,7 @@ export const MorosidadEngine = {
     return new Promise((resolve) => {
       setTimeout(() => {
         // Auditoría anclada al 06/05/2026
-        const fechaActual = new Date('2026-05-06T12:00:00');
-        fechaActual.setHours(0, 0, 0, 0);
+        const fechaActual = startOfDay(new Date('2026-05-06T12:00:00'));
 
         const alumnosActualizados: Student[] = estudiantes.map((estudiante): Student => {
           const resultado: Student = { ...estudiante };
@@ -18,12 +18,11 @@ export const MorosidadEngine = {
             return resultado;
           }
 
-          // SOLUCIÓN: Leer la fecha directamente sin destrozarla
-          // Si dueDate es '2026-06-05', esto crea la fecha perfecta
-          const fechaVencimiento = new Date(`${resultado.dueDate}T00:00:00`);
-          fechaVencimiento.setHours(0, 0, 0, 0);
+          // date-fns: parseISO interpreta la cadena ISO sin ambigüedad de zona horaria;
+          // startOfDay normaliza a medianoche local; differenceInDays evita off-by-one por DST.
+          const fechaVencimiento = startOfDay(parseISO(resultado.dueDate));
 
-          const diasRetraso = Math.floor((fechaActual.getTime() - fechaVencimiento.getTime()) / (1000 * 60 * 60 * 24));
+          const diasRetraso = differenceInDays(fechaActual, fechaVencimiento);
 
           // Asignación de estado según jerarquía
           if (diasRetraso > 14) {

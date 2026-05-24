@@ -2,13 +2,29 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import dynamic from 'next/dynamic';
 
 import { ProductGrid } from './product-grid';
 import { ProductDetail, type StoreProduct } from './product-detail';
 import { CartPanel, type CartItem } from './cart-panel';
+import { type TicketImprimibleProps } from '@/components/app/TicketImprimible';
+
+// Lazy-load del ticket — solo se descarga cuando el usuario completa un checkout.
+// ssr: false porque usa window.print() y estilos @media print que son exclusivos del cliente.
+const TicketImprimible = dynamic(
+  () => import('@/components/app/TicketImprimible'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-20 font-mono text-sm text-gray-400">
+        Preparando ticket…
+      </div>
+    ),
+  }
+);
 
 // ── STRICTLY PROHIBITED: type: "spring" ──
 const cinematicTransition = {
@@ -132,6 +148,9 @@ export function VentasStore() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  // Ticket state — datos para el comprobante post-checkout
+  const [ticketData, setTicketData] = useState<TicketImprimibleProps | null>(null);
+
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // ─── Cart handlers ───────────────────────────────────────────────
@@ -183,6 +202,22 @@ export function VentasStore() {
 
   const handleCheckout = useCallback((buyerData: Record<string, unknown>) => {
     const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    // Generar datos para el ticket de pago
+    const items = cart.map((c) => `${c.name} (x${c.quantity})`).join(', ');
+    setTicketData({
+      nombreAlumno: buyerData.alumnoNombre as string,
+      dni: buyerData.alumnoDni as string,
+      montoPagado: totalPrice,
+      fecha: new Date().toLocaleDateString('es-PE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }),
+      nroOperacion: 'OP-' + Date.now().toString().slice(-6),
+      concepto: items || 'Venta de productos',
+    });
+
     toast({
       title: 'Pedido registrado',
       description: `Total: S/ ${totalPrice.toFixed(2)} — Se generó la solicitud de venta.`,
@@ -300,6 +335,36 @@ export function VentasStore() {
         onRemoveItem={removeItem}
         onCheckout={handleCheckout}
       />
+
+      {/* ── Overlay del Ticket de Pago (post-checkout) ────────────────── */}
+      <AnimatePresence>
+        {ticketData && (
+          <motion.div
+            key="ticket-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 z-[100] overflow-auto bg-white"
+          >
+            {/* Barra superior: Volver a la tienda */}
+            <div className="no-print-ticket sticky top-0 z-10 flex items-center gap-3 border-b border-gray-200 bg-white/90 px-5 py-3 backdrop-blur-sm">
+              <button
+                id="btn-cerrar-ticket"
+                type="button"
+                onClick={() => setTicketData(null)}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-mono text-sm font-medium text-gray-700 transition hover:bg-gray-100 active:scale-95"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver a la Tienda
+              </button>
+            </div>
+
+            {/* El ticket */}
+            <TicketImprimible {...ticketData} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

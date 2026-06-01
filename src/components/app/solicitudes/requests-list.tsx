@@ -7,9 +7,10 @@ import { useMemo } from 'react';
 
 type RequestsListProps = {
   requests: ConfirmationRequest[];
+  onApprove: (requestId: string) => void;
 };
 
-export default function RequestsList({ requests }: RequestsListProps) {
+export default function RequestsList({ requests, onApprove }: RequestsListProps) {
   
   const groupedRequests = useMemo(() => {
     return requests.reduce((acc, request) => {
@@ -48,7 +49,7 @@ export default function RequestsList({ requests }: RequestsListProps) {
           </h3>
           <div className="border rounded-lg">
             {groupedRequests[date].map((request, index) => (
-              <RequestItem key={request.id} request={request} isLast={index === groupedRequests[date].length - 1} />
+              <RequestItem key={request.id} request={request} isLast={index === groupedRequests[date].length - 1} onApprove={onApprove} />
             ))}
           </div>
         </div>

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { products } from '@/lib/data';
+import type { Product } from '@/lib/types';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import { ShoppingBag, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -133,9 +135,21 @@ const storeProducts: StoreProduct[] = [
   },
 ];
 
+// ─── Mapping: StoreProduct name → Product name (data.ts) ─────────────────
+// Bridges the visual catalog (StoreProduct) with the inventory DB (Product).
+const storeToInventoryMap: Record<string, string> = {
+  'Camiseta y Short Oficial': 'Camiseta y short',
+  'Chaleco de Entrenamiento': 'Chaleco entrenamiento azul',
+  'Balón de Fútbol N°5': 'Balón de fútbol N°5',
+  'Botella de Agua 1L': 'Botella de agua 1L',
+};
+
 // ─── Root Store Component ────────────────────────────────────────────────
 export function VentasStore() {
   const { toast } = useToast();
+
+  // ── Inventory state: initialized from data.ts, NEVER mutate `products` directly ──
+  const [inventory, setInventory] = useState<Product[]>(products);
 
   // View state
   const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(null);
@@ -203,6 +217,25 @@ export function VentasStore() {
   const handleCheckout = useCallback((buyerData: Record<string, unknown>) => {
     const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+    // ── Lógica transaccional: descontar stock del inventario local ──
+    setInventory((prev) =>
+      prev.map((product) => {
+        // Buscar si algún item del carrito corresponde a este producto del inventario
+        const matchingCartItem = cart.find((cartItem) => {
+          const inventoryName = storeToInventoryMap[cartItem.name];
+          return inventoryName
+            ? inventoryName === product.name
+            : cartItem.name === product.name;
+        });
+
+        if (!matchingCartItem) return product;
+
+        // Descontar stock inmutablemente (mínimo 0)
+        const newStock = Math.max(0, product.stock - matchingCartItem.quantity);
+        return { ...product, stock: newStock };
+      })
+    );
+
     // Generar datos para el ticket de pago
     const items = cart.map((c) => `${c.name} (x${c.quantity})`).join(', ');
     setTicketData({
@@ -218,12 +251,14 @@ export function VentasStore() {
       concepto: items || 'Venta de productos',
     });
 
-    toast({
-      title: 'Pedido registrado',
-      description: `Total: S/ ${totalPrice.toFixed(2)} — Se generó la solicitud de venta.`,
-    });
+    // ── Limpiar carrito y cerrar panel ──
     setCart([]);
     setIsCartOpen(false);
+
+    toast({
+      title: '✅ Venta completada',
+      description: `Total: S/ ${totalPrice.toFixed(2)} — Stock actualizado correctamente.`,
+    });
   }, [cart, toast]);
 
   // ─── Navigation handlers ─────────────────────────────────────────
@@ -298,6 +333,7 @@ export function VentasStore() {
              transformOrigin is injected dynamically based on click position.
         */}
         <div ref={gridRef} className="absolute inset-0" style={{ transformOrigin: zoomOrigin }}>
+          {/* ── Renderiza desde inventory-aware storeProducts, nunca la constante original ── */}
           <ProductGrid
             products={storeProducts}
             selectedProductId={selectedProduct?.id || null}

@@ -1,10 +1,11 @@
 'use client';
-import { useState, useMemo } from 'react';
-import { ConfirmationRequest, RequestStatus } from '@/lib/types';
+import { useState, useMemo, useCallback } from 'react';
+import { ConfirmationRequest, RequestStatus, Student } from '@/lib/types';
 import FilterBar from './filter-bar';
 import RequestsList from './requests-list';
 import { DateRange } from 'react-day-picker';
-import { users } from '@/lib/data';
+import { users, requests as requestsData, students as studentsData } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 type SolicitudesClientProps = {
   initialRequests: ConfirmationRequest[];
@@ -12,6 +13,12 @@ type SolicitudesClientProps = {
 };
 
 export default function SolicitudesClient({ initialRequests, initialStatus }: SolicitudesClientProps) {
+  const { toast } = useToast();
+
+  // ── Estado local: NUNCA mutar las constantes importadas directamente ──
+  const [localRequests, setLocalRequests] = useState<ConfirmationRequest[]>(initialRequests);
+  const [localStudents, setLocalStudents] = useState<Student[]>(studentsData);
+
   const [status, setStatus] = useState<string>(initialStatus || 'all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [promoter, setPromoter] = useState<string>('all');
@@ -22,22 +29,22 @@ export default function SolicitudesClient({ initialRequests, initialStatus }: So
 
 
   const filteredRequests = useMemo(() => {
-    let requests = [...initialRequests];
+    let filtered = [...localRequests];
 
     if (status !== 'all') {
-      requests = requests.filter(req => req.status === status);
+      filtered = filtered.filter(req => req.status === status);
     }
     
     if (promoter !== 'all') {
-      requests = requests.filter(req => req.promoterName === promoter);
+      filtered = filtered.filter(req => req.promoterName === promoter);
     }
     
     if (motive !== 'all') {
-      requests = requests.filter(req => req.motive === motive);
+      filtered = filtered.filter(req => req.motive === motive);
     }
 
     if (dateRange?.from) {
-      requests = requests.filter(req => {
+      filtered = filtered.filter(req => {
         const reqDate = new Date(req.timestamp);
         if (dateRange.to) {
           return reqDate >= dateRange.from! && reqDate <= dateRange.to!;
@@ -47,15 +54,63 @@ export default function SolicitudesClient({ initialRequests, initialStatus }: So
       });
     }
 
-    return requests.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [initialRequests, status, promoter, motive, dateRange]);
-  
-  const handleFilter = () => {
+    return filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [localRequests, status, promoter, motive, dateRange]);
+
+  // ── Lógica transaccional: Aprobar solicitud ──────────────────────────
+  const handleApprove = useCallback((requestId: string): void => {
+    // 1. Encontrar la solicitud
+    const targetRequest = localRequests.find((req) => req.id === requestId);
+    if (!targetRequest || targetRequest.status !== 'Pendiente') return;
+
+    const paymentAmount = targetRequest.payment.amount;
+    const studentName = targetRequest.student.name;
+
+    // 2. Actualizar el estado de la solicitud a "Confirmado" (inmutable)
+    setLocalRequests((prev) =>
+      prev.map((req) =>
+        req.id === requestId
+          ? {
+              ...req,
+              status: 'Confirmado' as const,
+              confirmationTimestamp: new Date().toISOString(),
+            }
+          : req
+      )
+    );
+
+    // 3. Lógica transaccional sobre el estudiante: descontar deuda
+    setLocalStudents((prev) =>
+      prev.map((student) => {
+        if (student.name !== studentName) return student;
+
+        const currentDebt = student.debtAmount ?? 0;
+        const newDebt = Math.max(0, currentDebt - paymentAmount);
+
+        const isDebtCleared = newDebt <= 0;
+
+        return {
+          ...student,
+          debtAmount: newDebt,
+          paymentStatus: isDebtCleared ? ('Al día' as const) : student.paymentStatus,
+          monthsOwed: isDebtCleared ? 0 : student.monthsOwed,
+          totalPayments: student.totalPayments + 1,
+        };
+      })
+    );
+
+    toast({
+      title: '✅ Solicitud aprobada',
+      description: `Pago de S/ ${paymentAmount.toFixed(2)} aplicado a ${studentName}.`,
+    });
+  }, [localRequests, toast]);
+
+  const handleFilter = (): void => {
     // The filtering is already done by useMemo, this function is for the button's onClick
     console.log("Filtering with:", { status, promoter, motive, dateRange });
   };
   
-  const handleClearFilters = () => {
+  const handleClearFilters = (): void => {
     setStatus(initialStatus || 'all');
     setPromoter('all');
     setMotive('all');
@@ -78,7 +133,7 @@ export default function SolicitudesClient({ initialRequests, initialStatus }: So
         onFilter={handleFilter}
         onClear={handleClearFilters}
       />
-      <RequestsList requests={filteredRequests} />
+      <RequestsList requests={filteredRequests} onApprove={handleApprove} />
     </div>
   );
 }

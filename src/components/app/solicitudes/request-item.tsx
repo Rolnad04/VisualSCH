@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 type RequestItemProps = {
   request: ConfirmationRequest;
   isLast: boolean;
+  onApprove: (requestId: string) => void;
 };
 
 const statusConfig = {
@@ -31,7 +32,7 @@ const statusConfig = {
   Observado: { color: 'bg-orange-500', icon: AlertTriangle, variant: 'secondary' as const },
 };
 
-export default function RequestItem({ request, isLast }: RequestItemProps) {
+export default function RequestItem({ request, isLast, onApprove }: RequestItemProps) {
   const { color, icon: Icon, variant } = statusConfig[request.status];
 
   const getStatusTimestamp = () => {
@@ -185,13 +186,13 @@ export default function RequestItem({ request, isLast }: RequestItemProps) {
             <>
               <Button variant="outline">Observar</Button>
               <Button variant="destructive">Rechazar</Button>
-              <Button className="bg-green-600 hover:bg-green-700">Confirmar</Button>
+              <Button className="bg-green-600 hover:bg-green-700" onClick={() => onApprove(request.id)}>Confirmar</Button>
             </>
           )}
            {request.status === 'Observado' && (
             <>
               <Button variant="destructive">Rechazar</Button>
-              <Button className="bg-green-600 hover:bg-green-700">Confirmar</Button>
+              <Button className="bg-green-600 hover:bg-green-700" onClick={() => onApprove(request.id)}>Confirmar</Button>
             </>
           )}
         </div>
